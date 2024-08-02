@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Layout from '../../components/Layout';
-import TenantCard from '../../components/TenantCard';
 import {
     Container,
     Typography,
@@ -18,8 +17,9 @@ import {
     TableHead,
     TableRow,
     Paper,
+    IconButton,
 } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add, Edit } from '@mui/icons-material';
 
 export default function ListTenants() {
     const [tenants, setTenants] = useState([]);
@@ -53,6 +53,9 @@ export default function ListTenants() {
         (tenant.cin && tenant.cin.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
+    const enterpriseTenants = filteredTenants.filter(tenant => tenant.type === 'enterprise');
+    const personTenants = filteredTenants.filter(tenant => tenant.type === 'person');
+
     return (
         <Layout>
             <Container>
@@ -78,10 +81,25 @@ export default function ListTenants() {
                         </Link>
                     </Box>
                 </Box>
+                <Typography variant="h6">Enterprise Tenants</Typography>
                 {isCardView ? (
                     <Box>
-                        {filteredTenants.map(tenant => (
-                            <TenantCard key={tenant.id} tenant={tenant} />
+                        {enterpriseTenants.map(tenant => (
+                            <Box key={tenant.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+                                <Typography variant="h6">{tenant.name}</Typography>
+                                <Typography>Address: {tenant.address}</Typography>
+                                <Typography>Type: {tenant.type}</Typography>
+                                <Typography>ICE: {tenant.ice}</Typography>
+                                <Typography>Representative: {tenant.representative}</Typography>
+                                <Typography>Representative CIN: {tenant.representative_cin}</Typography>
+                                <Typography>Representative Name: {tenant.representative_name}</Typography>
+                                <Typography>Representative Prenom: {tenant.representative_prenom}</Typography>
+                                <Link href={`/tenants/edit?id=${tenant.id}`} passHref>
+                                    <IconButton edge="end" color="primary">
+                                        <Edit />
+                                    </IconButton>
+                                </Link>
+                            </Box>
                         ))}
                     </Box>
                 ) : (
@@ -92,38 +110,81 @@ export default function ListTenants() {
                                     <TableCell>Name</TableCell>
                                     <TableCell>Address</TableCell>
                                     <TableCell>Type</TableCell>
-                                    {tenants.some(tenant => tenant.type === 'enterprise') && (
-                                        <>
-                                            <TableCell>ICE</TableCell>
-                                            <TableCell>Representative</TableCell>
-                                            <TableCell>Representative CIN</TableCell>
-                                            <TableCell>Representative Name</TableCell>
-                                            <TableCell>Representative Prenom</TableCell>
-                                        </>
-                                    )}
-                                    {tenants.some(tenant => tenant.type === 'person') && (
-                                        <TableCell>CIN</TableCell>
-                                    )}
+                                    <TableCell>ICE</TableCell>
+                                    <TableCell>Representative</TableCell>
+                                    <TableCell>Representative CIN</TableCell>
+                                    <TableCell>Representative Name</TableCell>
+                                    <TableCell>Representative Prenom</TableCell>
+                                    <TableCell>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredTenants.map(tenant => (
+                                {enterpriseTenants.map(tenant => (
                                     <TableRow key={tenant.id}>
                                         <TableCell>{tenant.name}</TableCell>
                                         <TableCell>{tenant.address}</TableCell>
                                         <TableCell>{tenant.type}</TableCell>
-                                        {tenant.type === 'enterprise' && (
-                                            <>
-                                                <TableCell>{tenant.ice}</TableCell>
-                                                <TableCell>{tenant.representative}</TableCell>
-                                                <TableCell>{tenant.representative_cin}</TableCell>
-                                                <TableCell>{tenant.representative_name}</TableCell>
-                                                <TableCell>{tenant.representative_prenom}</TableCell>
-                                            </>
-                                        )}
-                                        {tenant.type === 'person' && (
-                                            <TableCell>{tenant.cin}</TableCell>
-                                        )}
+                                        <TableCell>{tenant.ice}</TableCell>
+                                        <TableCell>{tenant.representative}</TableCell>
+                                        <TableCell>{tenant.representative_cin}</TableCell>
+                                        <TableCell>{tenant.representative_name}</TableCell>
+                                        <TableCell>{tenant.representative_prenom}</TableCell>
+                                        <TableCell>
+                                            <Link href={`/tenants/edit?id=${tenant.id}`} passHref>
+                                                <IconButton edge="end" color="primary">
+                                                    <Edit />
+                                                </IconButton>
+                                            </Link>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                )}
+                <Typography variant="h6" mt={4}>Person Tenants</Typography>
+                {isCardView ? (
+                    <Box>
+                        {personTenants.map(tenant => (
+                            <Box key={tenant.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+                                <Typography variant="h6">{tenant.name}</Typography>
+                                <Typography>Address: {tenant.address}</Typography>
+                                <Typography>Type: {tenant.type}</Typography>
+                                <Typography>CIN: {tenant.cin}</Typography>
+                                <Link href={`/tenants/edit?id=${tenant.id}`} passHref>
+                                    <IconButton edge="end" color="primary">
+                                        <Edit />
+                                    </IconButton>
+                                </Link>
+                            </Box>
+                        ))}
+                    </Box>
+                ) : (
+                    <TableContainer component={Paper}>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Name</TableCell>
+                                    <TableCell>Address</TableCell>
+                                    <TableCell>Type</TableCell>
+                                    <TableCell>CIN</TableCell>
+                                    <TableCell>Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {personTenants.map(tenant => (
+                                    <TableRow key={tenant.id}>
+                                        <TableCell>{tenant.name}</TableCell>
+                                        <TableCell>{tenant.address}</TableCell>
+                                        <TableCell>{tenant.type}</TableCell>
+                                        <TableCell>{tenant.cin}</TableCell>
+                                        <TableCell>
+                                            <Link href={`/tenants/edit?id=${tenant.id}`} passHref>
+                                                <IconButton edge="end" color="primary">
+                                                    <Edit />
+                                                </IconButton>
+                                            </Link>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

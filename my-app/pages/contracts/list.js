@@ -1,6 +1,6 @@
 // pages/contracts/list.js
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link'; // Add this import statement
+import Link from 'next/link';
 import Layout from '../../components/Layout';
 import {
     Container,
@@ -17,8 +17,9 @@ import {
     TableHead,
     TableRow,
     Paper,
+    IconButton,
 } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add, Edit } from '@mui/icons-material';
 
 export default function ListContracts() {
     const [contracts, setContracts] = useState([]);
@@ -76,10 +77,15 @@ export default function ListContracts() {
                     <Box>
                         {filteredContracts.map(contract => (
                             <Box key={contract.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-                                <Typography variant="h6">{contract.property_name}</Typography>
+                                <Typography variant="h6">Property: {contract.property_name}</Typography>
                                 <Typography>Tenant: {contract.tenant_name}</Typography>
                                 <Typography>Start Date: {contract.start_date}</Typography>
                                 <Typography>Price: {contract.price} DHS</Typography>
+                                <Link href={`/contracts/edit?id=${contract.id}`} passHref>
+                                    <IconButton edge="end" color="primary">
+                                        <Edit />
+                                    </IconButton>
+                                </Link>
                             </Box>
                         ))}
                     </Box>
@@ -92,6 +98,7 @@ export default function ListContracts() {
                                     <TableCell>Tenant</TableCell>
                                     <TableCell>Start Date</TableCell>
                                     <TableCell>Price (DHS)</TableCell>
+                                    <TableCell>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -101,6 +108,13 @@ export default function ListContracts() {
                                         <TableCell>{contract.tenant_name}</TableCell>
                                         <TableCell>{contract.start_date}</TableCell>
                                         <TableCell>{contract.price}</TableCell>
+                                        <TableCell>
+                                            <Link href={`/contracts/edit?id=${contract.id}`} passHref>
+                                                <IconButton edge="end" color="primary">
+                                                    <Edit />
+                                                </IconButton>
+                                            </Link>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

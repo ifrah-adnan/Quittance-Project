@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Layout from '../../components/Layout';
-import PropertyCard from '../../components/PropertyCard';
 import {
     Container,
     Typography,
@@ -18,8 +17,9 @@ import {
     TableHead,
     TableRow,
     Paper,
+    IconButton,
 } from '@mui/material';
-import { Add } from '@mui/icons-material';
+import { Add, Edit } from '@mui/icons-material';
 
 export default function ListProperties() {
     const [properties, setProperties] = useState([]);
@@ -77,7 +77,18 @@ export default function ListProperties() {
                 {isCardView ? (
                     <Box>
                         {filteredProperties.map(property => (
-                            <PropertyCard key={property.id} property={property} />
+                            <Box key={property.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
+                                <Typography variant="h6">{property.name}</Typography>
+                                <Typography>Address: {property.address}</Typography>
+                                <Typography>Postal Code: {property.postal_code}</Typography>
+                                <Typography>City: {property.city}</Typography>
+                                <Typography>Land Title: {property.land_title}</Typography>
+                                <Link href={`/properties/edit?id=${property.id}`} passHref>
+                                    <IconButton edge="end" color="primary">
+                                        <Edit />
+                                    </IconButton>
+                                </Link>
+                            </Box>
                         ))}
                     </Box>
                 ) : (
@@ -90,6 +101,7 @@ export default function ListProperties() {
                                     <TableCell>Postal Code</TableCell>
                                     <TableCell>City</TableCell>
                                     <TableCell>Land Title</TableCell>
+                                    <TableCell>Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
@@ -100,6 +112,13 @@ export default function ListProperties() {
                                         <TableCell>{property.postal_code}</TableCell>
                                         <TableCell>{property.city}</TableCell>
                                         <TableCell>{property.land_title}</TableCell>
+                                        <TableCell>
+                                            <Link href={`/properties/edit?id=${property.id}`} passHref>
+                                                <IconButton edge="end" color="primary">
+                                                    <Edit />
+                                                </IconButton>
+                                            </Link>
+                                        </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
