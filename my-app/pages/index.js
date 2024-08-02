@@ -1,12 +1,24 @@
 // pages/index.js
-import React from 'react';
-import Layout from '../components/Layout';
-import { Typography } from '@mui/material';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Home() {
+    const { data: session, status } = useSession();
+
+    if (status === "loading") {
+        return <div>Loading...</div>;
+    }
+
     return (
-        <Layout>
-            <Typography variant="h4">Welcome to Property Management System</Typography>
-        </Layout>
+        <div>
+            <h1>Welcome to the Home Page</h1>
+            {session ? (
+                <div>
+                    <p>Signed in as {session.user.email}</p>
+                    <button onClick={() => signOut()}>Sign out</button>
+                </div>
+            ) : (
+                <p>You are not signed in</p>
+            )}
+        </div>
     );
 }

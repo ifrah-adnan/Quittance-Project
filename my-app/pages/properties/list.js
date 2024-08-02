@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Layout from '../../components/Layout';
+import withAuth from '../../utils/withAuth';
 import {
     Container,
     Typography,
@@ -18,19 +19,23 @@ import {
     TableRow,
     Paper,
     IconButton,
+    Grid,
+    Card,
+    CardContent,
+    CardActions,
 } from '@mui/material';
 import { Add, Edit } from '@mui/icons-material';
 
-export default function ListProperties() {
+function ListProperties({ session }) {
     const [properties, setProperties] = useState([]);
     const [isCardView, setIsCardView] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
     useEffect(() => {
         fetch('/api/listProperties')
-            .then(res => res.json())
-            .then(data => setProperties(data))
-            .catch(err => console.error(err));
+            .then((res) => res.json())
+            .then((data) => setProperties(data))
+            .catch((err) => console.error(err));
     }, []);
 
     const handleViewChange = () => {
@@ -41,12 +46,13 @@ export default function ListProperties() {
         setSearchQuery(e.target.value);
     };
 
-    const filteredProperties = properties.filter(property =>
-        property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.postal_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        property.land_title.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredProperties = properties.filter(
+        (property) =>
+            property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            property.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            property.postal_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            property.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            property.land_title.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
     return (
@@ -74,23 +80,30 @@ export default function ListProperties() {
                         </Link>
                     </Box>
                 </Box>
+
                 {isCardView ? (
-                    <Box>
-                        {filteredProperties.map(property => (
-                            <Box key={property.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-                                <Typography variant="h6">{property.name}</Typography>
-                                <Typography>Address: {property.address}</Typography>
-                                <Typography>Postal Code: {property.postal_code}</Typography>
-                                <Typography>City: {property.city}</Typography>
-                                <Typography>Land Title: {property.land_title}</Typography>
-                                <Link href={`/properties/edit?id=${property.id}`} passHref>
-                                    <IconButton edge="end" color="primary">
-                                        <Edit />
-                                    </IconButton>
-                                </Link>
-                            </Box>
+                    <Grid container spacing={2}>
+                        {filteredProperties.map((property) => (
+                            <Grid item xs={12} sm={6} md={4} lg={3} key={property.id}>
+                                <Card>
+                                    <CardContent>
+                                        <Typography variant="h6">{property.name}</Typography>
+                                        <Typography>Address: {property.address}</Typography>
+                                        <Typography>Postal Code: {property.postal_code}</Typography>
+                                        <Typography>City: {property.city}</Typography>
+                                        <Typography>Land Title: {property.land_title}</Typography>
+                                    </CardContent>
+                                    <CardActions>
+                                        <Link href={`/properties/edit?id=${property.id}`} passHref>
+                                            <IconButton edge="end" color="primary">
+                                                <Edit />
+                                            </IconButton>
+                                        </Link>
+                                    </CardActions>
+                                </Card>
+                            </Grid>
                         ))}
-                    </Box>
+                    </Grid>
                 ) : (
                     <TableContainer component={Paper}>
                         <Table>
@@ -105,7 +118,7 @@ export default function ListProperties() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredProperties.map(property => (
+                                {filteredProperties.map((property) => (
                                     <TableRow key={property.id}>
                                         <TableCell>{property.name}</TableCell>
                                         <TableCell>{property.address}</TableCell>
@@ -129,3 +142,5 @@ export default function ListProperties() {
         </Layout>
     );
 }
+
+export default withAuth(ListProperties);
