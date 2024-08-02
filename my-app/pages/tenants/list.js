@@ -18,6 +18,10 @@ import {
     TableRow,
     Paper,
     IconButton,
+    Grid,
+    Card,
+    CardContent,
+    CardActions,
 } from '@mui/material';
 import { Add, Edit } from '@mui/icons-material';
 
@@ -81,27 +85,34 @@ export default function ListTenants() {
                         </Link>
                     </Box>
                 </Box>
+
                 <Typography variant="h6">Enterprise Tenants</Typography>
                 {isCardView ? (
-                    <Box>
+                    <Grid container spacing={2}>
                         {enterpriseTenants.map(tenant => (
-                            <Box key={tenant.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-                                <Typography variant="h6">{tenant.name}</Typography>
-                                <Typography>Address: {tenant.address}</Typography>
-                                <Typography>Type: {tenant.type}</Typography>
-                                <Typography>ICE: {tenant.ice}</Typography>
-                                <Typography>Representative: {tenant.representative}</Typography>
-                                <Typography>Representative CIN: {tenant.representative_cin}</Typography>
-                                <Typography>Representative Name: {tenant.representative_name}</Typography>
-                                <Typography>Representative Prenom: {tenant.representative_prenom}</Typography>
-                                <Link href={`/tenants/edit?id=${tenant.id}`} passHref>
-                                    <IconButton edge="end" color="primary">
-                                        <Edit />
-                                    </IconButton>
-                                </Link>
-                            </Box>
+                            <Grid item xs={12} sm={6} md={4} lg={4} key={tenant.id}>
+                                <Card>
+                                    <CardContent>
+                                        <Typography variant="h6">{tenant.name}</Typography>
+                                        <Typography>Address: {tenant.address}</Typography>
+                                        <Typography>Type: {tenant.type}</Typography>
+                                        <Typography>ICE: {tenant.ice}</Typography>
+                                        <Typography>Representative: {tenant.representative}</Typography>
+                                        <Typography>Representative CIN: {tenant.representative_cin}</Typography>
+                                        <Typography>Representative Name: {tenant.representative_name}</Typography>
+                                        <Typography>Representative Prenom: {tenant.representative_prenom}</Typography>
+                                    </CardContent>
+                                    <CardActions>
+                                        <Link href={`/tenants/edit?id=${tenant.id}`} passHref>
+                                            <IconButton edge="end" color="primary">
+                                                <Edit />
+                                            </IconButton>
+                                        </Link>
+                                    </CardActions>
+                                </Card>
+                            </Grid>
                         ))}
-                    </Box>
+                    </Grid>
                 ) : (
                     <TableContainer component={Paper}>
                         <Table>
@@ -142,23 +153,30 @@ export default function ListTenants() {
                         </Table>
                     </TableContainer>
                 )}
+
                 <Typography variant="h6" mt={4}>Person Tenants</Typography>
                 {isCardView ? (
-                    <Box>
+                    <Grid container spacing={2}>
                         {personTenants.map(tenant => (
-                            <Box key={tenant.id} sx={{ mb: 2, p: 2, border: '1px solid #ccc', borderRadius: 2 }}>
-                                <Typography variant="h6">{tenant.name}</Typography>
-                                <Typography>Address: {tenant.address}</Typography>
-                                <Typography>Type: {tenant.type}</Typography>
-                                <Typography>CIN: {tenant.cin}</Typography>
-                                <Link href={`/tenants/edit?id=${tenant.id}`} passHref>
-                                    <IconButton edge="end" color="primary">
-                                        <Edit />
-                                    </IconButton>
-                                </Link>
-                            </Box>
+                            <Grid item xs={12} sm={6} md={4} lg={4} key={tenant.id}>
+                                <Card>
+                                    <CardContent>
+                                        <Typography variant="h6">{tenant.name}</Typography>
+                                        <Typography>Address: {tenant.address}</Typography>
+                                        <Typography>Type: {tenant.type}</Typography>
+                                        <Typography>CIN: {tenant.cin}</Typography>
+                                    </CardContent>
+                                    <CardActions>
+                                        <Link href={`/tenants/edit?id=${tenant.id}`} passHref>
+                                            <IconButton edge="end" color="primary">
+                                                <Edit />
+                                            </IconButton>
+                                        </Link>
+                                    </CardActions>
+                                </Card>
+                            </Grid>
                         ))}
-                    </Box>
+                    </Grid>
                 ) : (
                     <TableContainer component={Paper}>
                         <Table>
