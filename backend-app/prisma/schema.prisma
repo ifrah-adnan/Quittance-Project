@@ -1,0 +1,59 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Property {
+  id            String   @id @default(uuid())
+  propertyNumber String   @unique
+  propertyType  PropertyType
+  name          String
+  address       String
+  city          String
+  state         String
+  zipCode       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  tenants       TenantProperties[]
+}
+model Tenant {
+  id             String    @id @default(uuid())
+  tenantType     TenantType
+  name           String
+  ice            String
+  address        String
+  contactName    String
+  contactCin     String
+  contactInfo    String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  properties     TenantProperties[]
+}
+
+model TenantProperties {
+  id             String    @id @default(uuid())
+  tenantId       String
+  propertyId     String
+
+  tenant         Tenant    @relation(fields: [tenantId], references: [id])
+  property       Property  @relation(fields: [propertyId], references: [id])
+}
+
+enum TenantType {
+  ENTERPRISE
+  PERSON
+}
+
+enum PropertyType {
+  VILLA
+  APARTMENT
+  HOUSE
+  STUDIO
+  OFFICE
+  GARAGE
+  AUTRE
+}
