@@ -1,22 +1,25 @@
-import React, { useState } from 'react';
-import Layout from '../components/Layout';
-import { CssBaseline } from '@mui/material';
-
+import React, { useState, useContext } from "react";
+import Layout from "../components/Layout";
+import { CssBaseline } from "@mui/material";
+import { NextUIProvider } from "@nextui-org/react";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 const MyApp = ({ Component, pageProps }) => {
-    const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
-    const handleSearch = (query) => {
-        setSearchQuery(query);
-    };
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+  };
 
-    return (
-        <>
-            <CssBaseline />
-            <Layout onSearch={handleSearch}>
-                <Component {...pageProps} searchQuery={searchQuery} />
-            </Layout>
-        </>
-    );
+  return (
+    <NextUIProvider>
+      <NextThemesProvider attribute="class" defaultTheme="dark">
+        {/* <CssBaseline /> */}
+        <Layout onSearch={handleSearch}>
+          <Component {...pageProps} searchQuery={searchQuery} />
+        </Layout>
+      </NextThemesProvider>
+    </NextUIProvider>
+  );
 };
 
 export default MyApp;

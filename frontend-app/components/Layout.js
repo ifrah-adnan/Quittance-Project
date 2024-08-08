@@ -1,74 +1,117 @@
-import React from 'react';
-import Sidebar from './Sidebar';
-import { Container, AppBar, Toolbar, Typography, InputBase, Box } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import { styled, alpha } from '@mui/material/styles';
+import React, { useEffect, useState } from "react";
+import Sidebar from "./Sidebar";
+import { Search } from "lucide-react";
+import { useTheme } from "next-themes";
 
-const Search = styled('div')(({ theme }) => ({
-    position: 'relative',
-    borderRadius: theme.shape.borderRadius,
-    backgroundColor: alpha(theme.palette.common.white, 0.15),
-    '&:hover': {
-        backgroundColor: alpha(theme.palette.common.white, 0.25),
-    },
-    marginLeft: 0,
-    width: '100%',
-    [theme.breakpoints.up('sm')]: {
-        marginLeft: theme.spacing(1),
-        width: 'auto',
-    },
+import {
+  Container,
+  AppBar,
+  Toolbar,
+  Typography,
+  InputBase,
+  Box,
+  IconButton,
+} from "@mui/material";
+import { styled } from "@mui/material/styles";
+import { Moon, Sun } from "lucide-react";
+
+const StyledAppBar = styled(AppBar)(({ theme }) => ({
+  backgroundColor: "#ffffff",
+  color: "#24292f",
+  boxShadow: "none",
+  borderBottom: "1px solid #e1e4e8",
 }));
 
-const SearchIconWrapper = styled('div')(({ theme }) => ({
-    padding: theme.spacing(0, 2),
-    height: '100%',
-    position: 'absolute',
-    pointerEvents: 'none',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+const StyledToolbar = styled(Toolbar)(({ theme }) => ({
+  paddingLeft: theme.spacing(2),
+  paddingRight: theme.spacing(2),
+  "@media (min-width: 600px)": {
+    paddingLeft: theme.spacing(3),
+    paddingRight: theme.spacing(3),
+  },
 }));
 
-const StyledInputBase = styled(InputBase)(({ theme }) => ({
-    color: 'inherit',
-    '& .MuiInputBase-input': {
-        padding: theme.spacing(1, 1, 1, 0),
-        // vertical padding + font size from searchIcon
-        paddingLeft: `calc(1em + ${theme.spacing(4)})`,
-        transition: theme.transitions.create('width'),
-        width: '100%',
-        [theme.breakpoints.up('md')]: {
-            width: '20ch',
-        },
-    },
+const StyledSearchInput = styled(InputBase)(({ theme }) => ({
+  backgroundColor: "#fafbfc",
+  border: "1px solid #e1e4e8",
+  borderRadius: 6,
+  color: "#24292f",
+  padding: theme.spacing(1),
+  marginLeft: theme.spacing(2),
+  marginRight: theme.spacing(2),
+  width: "100%",
+  "@media (min-width: 600px)": {
+    width: "auto",
+    flex: 1,
+  },
+  "&::placeholder": {
+    color: "#6a737d",
+  },
 }));
 
 const Layout = ({ children, onSearch }) => {
-    return (
-        <div style={{ display: 'flex' }}>
-            <Sidebar />
-            <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                <AppBar position="static">
-                    <Toolbar>
-                        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-                            MyApp
-                        </Typography>
-                        <Search>
-                            <SearchIconWrapper>
-                                <SearchIcon />
-                            </SearchIconWrapper>
-                            <StyledInputBase
-                                placeholder="Search…"
-                                inputProps={{ 'aria-label': 'search' }}
-                                onChange={(e) => onSearch(e.target.value)}
-                            />
-                        </Search>
-                    </Toolbar>
-                </AppBar>
-                <Container sx={{ marginTop: 4 }}>{children}</Container>
-            </Box>
-        </div>
-    );
+  const [searchTerm, setSearchTerm] = useState("");
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const handleSearchChange = (e) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    if (typeof onSearch === "function") {
+      onSearch(newSearchTerm);
+    }
+  };
+
+  const toggleTheme = () => {
+    setTheme(theme === "light" ? "dark" : "light");
+  };
+
+  if (!mounted) return null; // Ne rend rien avant le premier rendu
+
+  return (
+    <div style={{ display: "flex" }}>
+      <Sidebar />
+      <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
+        <StyledAppBar position="static">
+          <StyledToolbar>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ flexGrow: 1 }}
+            >
+              MyApp
+            </Typography>
+            <div className="relative">
+              <StyledSearchInput
+                placeholder="Search or jump to..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                startAdornment={
+                  <IconButton>
+                    <Search className="text-gray-400" size={18} />
+                  </IconButton>
+                }
+              />
+            </div>
+            <IconButton
+              onClick={toggleTheme}
+              sx={{
+                color: "#24292f",
+              }}
+            >
+              {theme === "light" ? <Moon size={24} /> : <Sun size={24} />}
+            </IconButton>
+          </StyledToolbar>
+        </StyledAppBar>
+        <Container sx={{ marginTop: 4 }}>{children}</Container>
+      </Box>
+    </div>
+  );
 };
 
 export default Layout;

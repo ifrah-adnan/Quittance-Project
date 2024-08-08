@@ -8,6 +8,7 @@ CREATE TYPE "PropertyType" AS ENUM ('VILLA', 'APARTMENT', 'HOUSE', 'STUDIO', 'OF
 CREATE TABLE "Property" (
     "id" TEXT NOT NULL,
     "propertyNumber" TEXT NOT NULL,
+    "propertyType" "PropertyType" NOT NULL,
     "name" TEXT NOT NULL,
     "address" TEXT NOT NULL,
     "city" TEXT NOT NULL,
@@ -40,6 +41,10 @@ CREATE TABLE "TenantProperties" (
     "id" TEXT NOT NULL,
     "tenantId" TEXT NOT NULL,
     "propertyId" TEXT NOT NULL,
+    "price" DECIMAL(65,30) NOT NULL,
+    "conditions" TEXT NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "TenantProperties_pkey" PRIMARY KEY ("id")
 );
