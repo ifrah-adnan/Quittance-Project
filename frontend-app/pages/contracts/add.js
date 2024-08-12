@@ -83,6 +83,7 @@ const Contracts = () => {
           rent: "",
           conditions: "",
         });
+        setSnackbarOpen(true);
       })
       .catch((error) => {
         setError(error.response?.data?.message || "Error creating contract");
@@ -203,8 +204,11 @@ const Contracts = () => {
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
       >
-        <MuiAlert onClose={handleCloseSnackbar} severity="error">
-          {error}
+        <MuiAlert
+          onClose={handleCloseSnackbar}
+          severity={error ? "error" : "success"}
+        >
+          {error || " Contract created successfully"}
         </MuiAlert>
       </Snackbar>
     </div>

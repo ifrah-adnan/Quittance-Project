@@ -32,9 +32,22 @@ const CreateRentalRecord = () => {
       .then((response) => setContracts(response.data))
       .catch(() => setError("Error fetching contracts"));
   };
-  const handleCreateRecord = () => {
-    console.log("this is data ", form);
 
+  useEffect(() => {
+    if (form.contractId) {
+      const selectedContract = contracts.find((c) => c.id === form.contractId);
+      if (selectedContract) {
+        setForm((prev) => ({
+          ...prev,
+          amountDue: selectedContract.rentAmount.toString(),
+        }));
+      }
+    } else {
+      setForm((prev) => ({ ...prev, amountDue: "" }));
+    }
+  }, [form.contractId, contracts]);
+
+  const handleCreateRecord = () => {
     const formattedForm = {
       ...form,
       dueDate: form.dueDate
@@ -74,7 +87,6 @@ const CreateRentalRecord = () => {
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };
-  console.log("this is data ", contracts);
 
   return (
     <div>
@@ -86,7 +98,7 @@ const CreateRentalRecord = () => {
           <Autocomplete
             options={contracts}
             getOptionLabel={(option) =>
-              `Contract for tenant : ${option.tenant.name} & property: ${option.property.propertyNumber} `
+              `Contract for tenant: ${option.tenant.name} & property: ${option.property.propertyNumber}`
             }
             renderInput={(params) => (
               <TextField {...params} label="Select Contract" />

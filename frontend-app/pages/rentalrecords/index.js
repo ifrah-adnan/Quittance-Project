@@ -24,6 +24,9 @@ import { styled } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
 
 const StatusChip = styled(Chip)(({ theme, paymentstatus }) => ({
   backgroundColor:
@@ -81,7 +84,266 @@ const RentalRecords = ({ searchQuery }) => {
         setSnackbarOpen(true);
       });
   };
+  console.log("this is data ", rentalRecords);
+  const generateRentReceipt = (record) => {
+    const doc = new jsPDF();
 
+    // Ajouter un fond légèrement gris pour simuler une photocopie
+    doc.setFillColor(250, 250, 250);
+    doc.rect(0, 0, 210, 297, "F");
+
+    // Configuration de la police
+    doc.setFont("helvetica");
+    doc.setFontSize(10);
+
+    // Titre principal
+    doc.setFontSize(16);
+    doc.setTextColor(0, 102, 204); // Bleu
+    doc.text("QUITTANCE DE LOYER", 105, 20, null, null, "center");
+
+    // Détails de la quittance
+    doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0); // Noir
+
+    // Référence de la quittance
+    doc.text(`REF : QL ${record.id.slice(0, 8)}`, 20, 30);
+
+    // Mois de la quittance
+    const formattedDate = new Date(record.dueDate).toLocaleDateString("fr-FR", {
+      month: "long",
+      year: "numeric",
+    });
+    doc.setTextColor(0, 102, 204); // Bleu pour le titre
+    doc.text(`Quittance de loyer du mois de ${formattedDate}`, 20, 40);
+
+    // Adresse du bien
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text(
+      "Adresse du bien : Magasin lotissement Al Weroua Sidi Maarouf",
+      20,
+      50
+    );
+    doc.text(`Code postal : ${record.contract.property.zipCode}`, 20, 55);
+    doc.text(`Ville : ${record.contract.property.city}`, 20, 60);
+    doc.text("Titre foncier : N°T-45/89862", 20, 65);
+
+    // Informations du déclarant
+    doc.setFontSize(12);
+    doc.setTextColor(0, 102, 204); // Bleu pour le titre
+    doc.text("Déclarant :", 20, 75);
+
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text(
+      "Je soussigné(e), [NOM DE LA SOCIÉTÉ] Unique, immatriculée au registre de commerce de",
+      20,
+      80
+    );
+    doc.text(
+      "Casablanca sous le numéro 541253, représentée par son gérant unique [NOM PRÉNOM],",
+      20,
+      85
+    );
+    doc.text(
+      "titulaire de la [carte nation], propriétaire du logement désigné ci-dessus,",
+      20,
+      90
+    );
+
+    // Informations sur le locataire
+    doc.setFontSize(12);
+    doc.setTextColor(0, 102, 204); // Bleu pour le titre
+    doc.text("Déclare avoir reçu de :", 20, 100);
+
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text(
+      `La société ${record.contract.tenant.name}, ICE xx, siège social ${record.contract.tenant.address},`,
+      20,
+      105
+    );
+    doc.text(
+      `représentée par son gérant M/me ${record.contract.tenant.contactName}, titulaire de la CIN N° ${record.contract.tenant.contactCin},`,
+      20,
+      110
+    );
+    doc.text(`Demeurant à ${record.contract.tenant.address},`, 20, 115);
+
+    // Somme reçue
+    doc.setFontSize(12);
+    doc.setTextColor(0, 102, 204); // Bleu pour le titre
+    doc.text("La somme de :", 20, 125);
+
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text(
+      `${record.amountPaid.toFixed(2)} dirhams ( ${numberToWords(
+        record.amountPaid
+      )} dirhams ),`,
+      20,
+      130
+    );
+
+    // Détails de la période de location
+    const startDate = new Date(record.dueDate).toLocaleDateString("fr-FR");
+    const endDate = new Date(record.dueDate).toLocaleDateString("fr-FR");
+
+    doc.setFontSize(12);
+    doc.setTextColor(0, 102, 204); // Bleu pour le titre
+    doc.text("Au titre de :", 20, 140);
+
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text(
+      `Paiement du loyer pour la période de location du ${startDate} au ${endDate} : ${record.amountDue.toFixed(
+        2
+      )} DHS`,
+      20,
+      145
+    );
+
+    // Clause de quittance
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text(
+      "Et lui en donne quittance, sous réserve de tous mes droits.",
+      20,
+      155
+    );
+
+    // Détails du règlement
+    doc.setFontSize(12);
+    doc.setTextColor(0, 102, 204); // Bleu pour le titre
+    doc.text("DÉTAIL DU RÈGLEMENT :", 20, 165);
+
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text(`Loyer : ${record.amountDue.toFixed(2)} Dirhams`, 30, 170);
+    doc.text("Provision pour charges : 0,00 Dirhams", 30, 175);
+    doc.text(`Total : ${record.amountDue.toFixed(2)} Dirhams`, 30, 180);
+    doc.text(
+      `Date du paiement : ${
+        record.paymentDate
+          ? new Date(record.paymentDate).toLocaleDateString("fr-FR")
+          : "Non payé"
+      }`,
+      30,
+      185
+    );
+
+    // Lieu et date
+    const today = new Date().toLocaleDateString("fr-FR");
+
+    doc.setTextColor(0, 0, 0); // Noir
+    doc.text(`Fait à ${record.contract.property.city} le ${today}`, 20, 200);
+
+    // Signature
+    doc.setFontSize(12);
+    doc.text("Signature du bailleur", 20, 220);
+
+    // Sauvegarder le PDF
+    doc.save(`quittance_${record.id}.pdf`);
+  };
+  function numberToWords(number) {
+    const units = [
+      "",
+      "un",
+      "deux",
+      "trois",
+      "quatre",
+      "cinq",
+      "six",
+      "sept",
+      "huit",
+      "neuf",
+      "dix",
+      "onze",
+      "douze",
+      "treize",
+      "quatorze",
+      "quinze",
+      "seize",
+      "dix-sept",
+      "dix-huit",
+      "dix-neuf",
+    ];
+    const tens = [
+      "",
+      "",
+      "vingt",
+      "trente",
+      "quarante",
+      "cinquante",
+      "soixante",
+      "soixante-dix",
+      "quatre-vingt",
+      "quatre-vingt-dix",
+    ];
+
+    function convertLessThanOneThousand(n) {
+      if (n === 0) return "";
+
+      let result = "";
+
+      if (n >= 100) {
+        result +=
+          units[Math.floor(n / 100)] + (n >= 200 ? " cent" : " cents") + " ";
+        n %= 100;
+      }
+
+      if (n >= 20) {
+        const tenIndex = Math.floor(n / 10);
+        result += tens[tenIndex];
+        if (n % 10 === 1 && tenIndex !== 8) result += " et";
+        result += " ";
+        n %= 10;
+      }
+
+      if (n > 0) {
+        if (n <= 19) {
+          result += units[n];
+        } else {
+          result += units[n];
+        }
+      }
+
+      return result.trim();
+    }
+
+    if (number === 0) return "zéro";
+
+    let result = "";
+    let billions = Math.floor(number / 1000000000);
+    let millions = Math.floor((number % 1000000000) / 1000000);
+    let thousands = Math.floor((number % 1000000) / 1000);
+    let remainder = number % 1000;
+
+    if (billions > 0) {
+      result +=
+        convertLessThanOneThousand(billions) +
+        " milliard" +
+        (billions > 1 ? "s" : "") +
+        " ";
+    }
+
+    if (millions > 0) {
+      result +=
+        convertLessThanOneThousand(millions) +
+        " million" +
+        (millions > 1 ? "s" : "") +
+        " ";
+    }
+
+    if (thousands > 0) {
+      result += convertLessThanOneThousand(thousands) + " mille ";
+    }
+
+    if (remainder > 0) {
+      result += convertLessThanOneThousand(remainder);
+    }
+
+    return result.trim();
+  }
   const handleDelete = (id) => {
     axios
       .delete(`http://localhost:3001/rental-payments/${id}`)
@@ -236,6 +498,15 @@ const RentalRecords = ({ searchQuery }) => {
                           onClick={() => handleDelete(record.id)}
                         >
                           <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Télécharger la quittance">
+                        <IconButton
+                          color="secondary"
+                          size="small"
+                          onClick={() => generateRentReceipt(record)}
+                        >
+                          <DownloadIcon />
                         </IconButton>
                       </Tooltip>
                     </TableCell>
