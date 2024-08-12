@@ -211,9 +211,10 @@ app.put("/tenants/:id", async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
+// Create a contract
 app.post("/contracts", async (req, res) => {
   try {
-    const { tenantId, propertyId, startDate, endDate, price, conditions } =
+    const { tenantId, propertyId, startDate, endDate, rentAmount, terms } =
       req.body;
 
     // Vérifier les champs requis
@@ -222,21 +223,21 @@ app.post("/contracts", async (req, res) => {
       !propertyId ||
       !startDate ||
       !endDate ||
-      price === undefined ||
-      conditions === undefined
+      rentAmount === undefined ||
+      terms === undefined
     ) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
     // Créer un contrat dans la base de données
-    const contract = await prisma.tenantProperties.create({
+    const contract = await prisma.contract.create({
       data: {
         tenantId,
         propertyId,
-        startDate,
-        endDate,
-        price: parseFloat(price), // Assurez-vous que `price` est un nombre
-        conditions,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        rentAmount: parseFloat(rentAmount), // Assurez-vous que `rentAmount` est un nombre
+        terms,
       },
     });
 
@@ -246,9 +247,62 @@ app.post("/contracts", async (req, res) => {
   }
 });
 
+app.post("/generate-rental-payments", async (req, res) => {
+  try {
+    const contracts = await prisma.contract.findMany({
+      where: {
+        startDate: {
+          lte: new Date(),
+        },
+        endDate: {
+          gte: new Date(),
+        },
+      },
+    });
+
+    for (const contract of contracts) {
+      let currentDate = new Date(contract.startDate);
+      while (currentDate <= new Date()) {
+        const nextDueDate = new Date(currentDate);
+        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+
+        // Vérifiez si un paiement pour cette date d'échéance existe déjà
+        const existingPayment = await prisma.rentalPayment.findFirst({
+          where: {
+            contractId: contract.id,
+            dueDate: currentDate,
+          },
+        });
+
+        if (!existingPayment) {
+          await prisma.rentalPayment.create({
+            data: {
+              contractId: contract.id,
+              dueDate: currentDate,
+              amountDue: contract.rentAmount,
+              amountPaid: 0,
+              paymentStatus: "PENDING",
+            },
+          });
+        }
+
+        // Avancer d'un mois
+        currentDate = nextDueDate;
+      }
+    }
+
+    res.status(200).json({ message: "Rental payments generated successfully" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ error: "An error occurred while generating rental payments" });
+  }
+});
+// Read all contracts
 app.get("/contracts", async (req, res) => {
   try {
-    const contracts = await prisma.tenantProperties.findMany({
+    const contracts = await prisma.contract.findMany({
       include: {
         tenant: true,
         property: true,
@@ -260,24 +314,242 @@ app.get("/contracts", async (req, res) => {
     res.status(400).json({ message: err.message });
   }
 });
+// Read all rental records
+app.get("/rentalRecords", async (req, res) => {
+  try {
+    const rentalRecords = await prisma.rentalPayment.findMany({
+      include: {
+        contract: {
+          include: {
+            tenant: true,
+            property: true,
+          },
+        },
+      },
+    });
+
+    res.status(200).json(rentalRecords);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+app.post("/rental-payments", async (req, res) => {
+  const {
+    contractId,
+    dueDate,
+    amountDue,
+    amountPaid,
+    paymentStatus,
+    paymentDate,
+  } = req.body;
+
+  console.log("Données reçues:", req.body); // Pour le débogage
+
+  try {
+    // Validation et conversion des données
+    if (!contractId || typeof contractId !== "string") {
+      throw new Error("Invalid contractId");
+    }
+
+    const parsedDueDate = new Date(dueDate);
+    if (isNaN(parsedDueDate.getTime())) {
+      throw new Error("Invalid dueDate");
+    }
+
+    const parsedAmountDue = parseFloat(amountDue);
+    if (isNaN(parsedAmountDue)) {
+      throw new Error("Invalid amountDue");
+    }
+
+    const parsedAmountPaid = parseFloat(amountPaid);
+    if (isNaN(parsedAmountPaid)) {
+      throw new Error("Invalid amountPaid");
+    }
+
+    if (!["PENDING", "PAID", "PARTIAL", "LATE"].includes(paymentStatus)) {
+      throw new Error("Invalid paymentStatus");
+    }
+
+    let parsedPaymentDate = null;
+    if (paymentDate) {
+      parsedPaymentDate = new Date(paymentDate);
+      if (isNaN(parsedPaymentDate.getTime())) {
+        throw new Error("Invalid paymentDate");
+      }
+    }
+
+    const rentalPayment = await prisma.rentalPayment.create({
+      data: {
+        contractId,
+        dueDate: parsedDueDate,
+        amountDue: parsedAmountDue,
+        amountPaid: parsedAmountPaid,
+        paymentStatus,
+        paymentDate: parsedPaymentDate,
+      },
+    });
+
+    console.log("RentalPayment créé:", rentalPayment); // Pour le débogage
+
+    res.status(201).json(rentalPayment);
+  } catch (err) {
+    console.error("Erreur lors de la création du RentalPayment:", err);
+    res.status(400).json({ message: err.message });
+  }
+});
+app.get("/rental-payments/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const rentalPayment = await prisma.rentalPayment.findUnique({
+      where: { id: id },
+      include: {
+        contract: {
+          include: {
+            property: true,
+            tenant: true,
+          },
+        },
+      },
+    });
+
+    if (!rentalPayment) {
+      return res.status(404).json({ message: "Rental Payment not found" });
+    }
+
+    res.status(200).json(rentalPayment);
+  } catch (err) {
+    console.error("Error fetching rental payment:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Route pour mettre à jour un enregistrement de paiement de location
+app.put("/rental-payments/:id", async (req, res) => {
+  const { id } = req.params;
+  const {
+    contractId,
+    dueDate,
+    amountDue,
+    amountPaid,
+    paymentStatus,
+    paymentDate,
+  } = req.body;
+
+  try {
+    const parsedDueDate = new Date(dueDate);
+    if (isNaN(parsedDueDate.getTime())) {
+      throw new Error("Invalid dueDate");
+    }
+
+    const parsedAmountDue = parseFloat(amountDue);
+    if (isNaN(parsedAmountDue)) {
+      throw new Error("Invalid amountDue");
+    }
+
+    const parsedAmountPaid = parseFloat(amountPaid);
+    if (isNaN(parsedAmountPaid)) {
+      throw new Error("Invalid amountPaid");
+    }
+
+    if (!["PENDING", "PAID", "PARTIAL", "LATE"].includes(paymentStatus)) {
+      throw new Error("Invalid paymentStatus");
+    }
+
+    let parsedPaymentDate = null;
+    if (paymentDate) {
+      parsedPaymentDate = new Date(paymentDate);
+      if (isNaN(parsedPaymentDate.getTime())) {
+        throw new Error("Invalid paymentDate");
+      }
+    }
+
+    const rentalPayment = await prisma.rentalPayment.update({
+      where: { id },
+      data: {
+        contractId,
+        dueDate: parsedDueDate,
+        amountDue: parsedAmountDue,
+        amountPaid: parsedAmountPaid,
+        paymentStatus,
+        paymentDate: parsedPaymentDate,
+      },
+    });
+
+    res.status(200).json(rentalPayment);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Route pour supprimer un enregistrement de paiement de location
+app.delete("/rental-payments/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.rentalPayment.delete({
+      where: { id },
+    });
+
+    res.status(204).send(); // No content
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// Read a single contract
+app.get("/contracts/:id", async (req, res) => {
+  try {
+    const contract = await prisma.contract.findUnique({
+      where: { id: req.params.id },
+      include: {
+        tenant: true,
+        property: true,
+      },
+    });
+    if (!contract) {
+      return res.status(404).json({ message: "Contract not found" });
+    }
+    res.json(contract);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Update a contract
 app.put("/contracts/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { tenantId, propertyId, startDate, endDate } = req.body;
+    const { tenantId, propertyId, startDate, endDate, rentAmount, terms } =
+      req.body;
 
-    const contract = await prisma.tenantProperties.update({
+    const contract = await prisma.contract.update({
       where: { id },
       data: {
         tenantId,
         propertyId,
-        startDate,
-        endDate,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        rentAmount: parseFloat(rentAmount),
+        terms,
       },
     });
 
     res.status(200).json(contract);
   } catch (err) {
     res.status(400).json({ message: err.message });
+  }
+});
+
+// Delete a contract
+app.delete("/contracts/:id", async (req, res) => {
+  try {
+    await prisma.contract.delete({
+      where: { id: req.params.id },
+    });
+    res.json({ message: "Contract deleted" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
