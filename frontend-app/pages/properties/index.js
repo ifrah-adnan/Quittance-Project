@@ -130,8 +130,10 @@ const Properties = ({ searchQuery }) => {
     setDialogOpen(true);
   };
 
-  const filteredProperties = properties.filter((property) =>
-    property.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredProperties = properties.filter(
+    (property) =>
+      property.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      property.propertyNumber.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

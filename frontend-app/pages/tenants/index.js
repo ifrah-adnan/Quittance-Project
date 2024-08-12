@@ -11,6 +11,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 
 import CardComponent from "../../components/CardComponent";
+import TenantCardComponent from "../../components/TenantCardComp";
 
 const Tenants = ({ searchQuery }) => {
   const [tenants, setTenants] = useState([]);
@@ -36,7 +37,7 @@ const Tenants = ({ searchQuery }) => {
       .then(() => fetchTenants())
       .catch((error) => setError("Error deleting tenant"));
   };
-  console.lo;
+  console.log("this is data for tenant ", tenants);
   const filteredTenants = tenants.filter((tenant) =>
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -51,7 +52,7 @@ const Tenants = ({ searchQuery }) => {
       <Grid container spacing={2}>
         {filteredTenants.map((tenant) => (
           <Grid item xs={12} sm={6} md={4} key={tenant.id}>
-            <CardComponent
+            <TenantCardComponent
               item={tenant}
               onDelete={handleDeleteTenant}
               onEdit={() => {}}
