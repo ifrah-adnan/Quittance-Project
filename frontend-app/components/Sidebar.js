@@ -13,7 +13,8 @@ import {
   ChevronRight,
   HomeOutlined,
   PersonOutlined,
-  DescriptionOutlined, // Import pour l'icône de contrat
+  DescriptionOutlined,
+  MonetizationOnOutlined,
 } from "@mui/icons-material";
 
 const Sidebar = () => {
@@ -28,7 +29,6 @@ const Sidebar = () => {
       variant="permanent"
       anchor="left"
       open={open}
-      onClose={toggleSidebar}
       sx={{
         width: open ? 240 : 64,
         flexShrink: 0,
@@ -38,6 +38,9 @@ const Sidebar = () => {
           transition: "width 0.3s ease",
           backgroundColor: "rgb(249, 250, 251)",
           borderRight: "1px solid rgb(229, 231, 235)",
+          position: "fixed",
+          height: "100vh",
+          overflowX: "hidden",
         },
       }}
     >
@@ -95,6 +98,21 @@ const Sidebar = () => {
             )}
           </ListItemIcon>
           {open && <ListItemText primary="Contracts" />}
+        </ListItem>
+        <ListItem
+          button
+          component={Link}
+          href="/rentalrecords" // Assurez-vous que cette route est correcte
+          className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <ListItemIcon>
+            {open ? (
+              <MonetizationOnOutlined className="text-gray-600 dark:text-gray-400" />
+            ) : (
+              <MonetizationOnOutlined className="text-gray-600 dark:text-gray-400" />
+            )}
+          </ListItemIcon>
+          {open && <ListItemText primary="Rental Records" />}
         </ListItem>
       </List>
     </Drawer>

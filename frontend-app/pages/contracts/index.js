@@ -12,17 +12,18 @@ import {
   TableRow,
   Paper,
   Button,
-  Container,
+  Box,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  Box,
 } from "@mui/material";
 
-const Contracts = ({ searchQuery }) => {
+const Contracts = () => {
   const [contracts, setContracts] = useState([]);
+  const [tenants, setTenants] = useState([]);
+  const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
@@ -30,6 +31,8 @@ const Contracts = ({ searchQuery }) => {
 
   useEffect(() => {
     fetchContracts();
+    fetchTenants();
+    fetchProperties();
   }, []);
 
   const fetchContracts = () => {
@@ -45,6 +48,20 @@ const Contracts = ({ searchQuery }) => {
       })
       .catch((error) => setError("Error fetching contracts"))
       .finally(() => setLoading(false));
+  };
+
+  const fetchTenants = () => {
+    axios
+      .get("http://localhost:3001/tenants")
+      .then((response) => setTenants(response.data))
+      .catch(() => setError("Error fetching tenants"));
+  };
+
+  const fetchProperties = () => {
+    axios
+      .get("http://localhost:3001/properties")
+      .then((response) => setProperties(response.data))
+      .catch(() => setError("Error fetching properties"));
   };
 
   const handleDeleteContract = (contract) => {
@@ -64,72 +81,88 @@ const Contracts = ({ searchQuery }) => {
     }
   };
 
-  //   const filteredContracts = Array.isArray(contracts)
-  //     ? contracts.filter((contract) =>
-  //         contract.title.includes(searchQuery.toLowerCase())
-  //       )
-  //     : [];
+  // Fonction pour obtenir le nom du locataire basé sur l'ID
+  const getTenantName = (tenantId) => {
+    const tenant = tenants.find((t) => t.id === tenantId);
+    return tenant ? tenant.name : "Unknown";
+  };
+
+  // Fonction pour obtenir le nom de la propriété basé sur l'ID
+  const getPropertyAddress = (propertyId) => {
+    const property = properties.find((p) => p.id === propertyId);
+    return property ? property.propertyNumber : "Unknown";
+  };
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-GB", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
 
   return (
-    <Container>
-      <div>
-        <Typography variant="h4" component="h1" gutterBottom>
-          Contracts
-        </Typography>
-        {loading && (
-          <div className="loader-container">
-            <CircularProgress />
-          </div>
-        )}
-        {error && (
-          <Snackbar
-            open={true}
-            message={error}
-            autoHideDuration={4000}
-            onClose={() => setError("")}
-          />
-        )}
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Title</TableCell>
-                <TableCell>Details</TableCell>
-                <TableCell>Tenant ID</TableCell>
-                <TableCell>Property ID</TableCell>
-                <TableCell>Actions</TableCell>
+    <Box>
+      <Typography variant="h4" component="h1" gutterBottom>
+        Contracts
+      </Typography>
+      {loading && (
+        <div className="loader-container">
+          <CircularProgress />
+        </div>
+      )}
+      {error && (
+        <Snackbar
+          open={true}
+          message={error}
+          autoHideDuration={4000}
+          onClose={() => setError("")}
+        />
+      )}
+      <TableContainer component={Paper}>
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableCell>Tenant Name</TableCell>
+              <TableCell>Property Number</TableCell>
+              <TableCell>Start Date</TableCell>
+              <TableCell>End Date</TableCell>
+              <TableCell>Rent Amount</TableCell>
+              <TableCell>Terms</TableCell>
+              <TableCell>Actions</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {contracts.map((contract) => (
+              <TableRow key={contract.id}>
+                <TableCell>{getTenantName(contract.tenantId)}</TableCell>
+                <TableCell>{getPropertyAddress(contract.propertyId)}</TableCell>
+                <TableCell>{formatDate(contract.startDate)}</TableCell>
+                <TableCell>{formatDate(contract.endDate)}</TableCell>
+                <TableCell>{contract.rentAmount}</TableCell>
+                <TableCell>{contract.terms}</TableCell>
+                <TableCell>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    onClick={() => handleDeleteContract(contract)}
+                  >
+                    Delete
+                  </Button>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    href={`/contracts/edit?id=${contract.id}`}
+                    style={{ marginLeft: "8px" }}
+                  >
+                    Edit
+                  </Button>
+                </TableCell>
               </TableRow>
-            </TableHead>
-            <TableBody>
-              {contracts?.map((contract) => (
-                <TableRow key={contract.id}>
-                  <TableCell>ttt</TableCell>
-                  <TableCell>{contract.details}</TableCell>
-                  <TableCell>{contract.tenantId}</TableCell>
-                  <TableCell>{contract.propertyId}</TableCell>
-                  <TableCell>
-                    <Button
-                      variant="contained"
-                      color="error"
-                      onClick={() => handleDeleteContract(contract)}
-                    >
-                      Delete
-                    </Button>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      href={`/contracts/edit?id=${contract.id}`}
-                      style={{ marginLeft: "8px" }}
-                    >
-                      Edit
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </div>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
       <Box
         sx={{
           position: "fixed",
@@ -156,8 +189,8 @@ const Contracts = ({ searchQuery }) => {
           <DialogTitle>Confirm Delete</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              Are you sure you want to delete the contract "
-              {contractToDelete?.title}"?
+              Are you sure you want to delete the contract with ID "
+              {contractToDelete?.id}"?
             </DialogContentText>
           </DialogContent>
           <DialogActions>
@@ -173,7 +206,7 @@ const Contracts = ({ searchQuery }) => {
           </DialogActions>
         </Dialog>
       )}
-    </Container>
+    </Box>
   );
 };
 

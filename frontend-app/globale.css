@@ -1,0 +1,9 @@
+.debug {
+  border: 1px solid red !important;
+}
+.debug > * {
+  border: 1px solid green !important;
+}
+.debug > * > * {
+  border: 1px solid green !important;
+}

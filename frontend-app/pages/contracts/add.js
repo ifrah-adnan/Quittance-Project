@@ -3,18 +3,17 @@ import axios from "axios";
 import {
   Button,
   TextField,
-  Select,
-  MenuItem,
+  Autocomplete,
   CircularProgress,
   Snackbar,
   Grid,
   Typography,
-  Autocomplete,
   Card,
   CardContent,
   CardActions,
 } from "@mui/material";
 import { useRouter } from "next/router";
+import MuiAlert from "@mui/material/Alert"; // Assurez-vous d'avoir ce package installé
 
 const Contracts = () => {
   const router = useRouter();
@@ -33,6 +32,7 @@ const Contracts = () => {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   useEffect(() => {
     fetchContracts();
@@ -65,7 +65,14 @@ const Contracts = () => {
 
   const handleCreateContract = () => {
     axios
-      .post("http://localhost:3001/contracts", form)
+      .post("http://localhost:3001/contracts", {
+        tenantId: form.tenant,
+        propertyId: form.property,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        rentAmount: parseFloat(form.rent), // Assurez-vous que `price` est un nombre
+        terms: form.conditions,
+      })
       .then(() => {
         fetchContracts();
         setForm({
@@ -77,7 +84,14 @@ const Contracts = () => {
           conditions: "",
         });
       })
-      .catch(() => setError("Error creating contract"));
+      .catch((error) => {
+        setError(error.response?.data?.message || "Error creating contract");
+        setSnackbarOpen(true);
+      });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbarOpen(false);
   };
 
   const handleSelectContract = (contract) => {
@@ -91,7 +105,6 @@ const Contracts = () => {
         Contracts
       </Typography>
       {loading && <CircularProgress />}
-      {error && <Snackbar open={true} message={error} />}
       <Grid container spacing={2}>
         <Grid item xs={12}>
           <Autocomplete
@@ -100,22 +113,25 @@ const Contracts = () => {
             renderInput={(params) => (
               <TextField {...params} label="Select Tenant" />
             )}
-            value={form.tenant}
+            value={tenants.find((tenant) => tenant.id === form.tenant) || null}
             onChange={(event, newValue) =>
-              setForm((prev) => ({ ...prev, tenant: newValue }))
+              setForm((prev) => ({ ...prev, tenant: newValue?.id || "" }))
             }
           />
         </Grid>
         <Grid item xs={12}>
           <Autocomplete
             options={properties}
-            getOptionLabel={(option) => option.address}
+            getOptionLabel={(option) => option.propertyNumber}
             renderInput={(params) => (
               <TextField {...params} label="Select Property" />
             )}
-            value={form.property}
+            value={
+              properties.find((property) => property.id === form.property) ||
+              null
+            }
             onChange={(event, newValue) =>
-              setForm((prev) => ({ ...prev, property: newValue }))
+              setForm((prev) => ({ ...prev, property: newValue?.id || "" }))
             }
           />
         </Grid>
@@ -147,11 +163,17 @@ const Contracts = () => {
           <TextField
             fullWidth
             label="Rent"
-            type="number"
+            type="text" // Changer le type à 'text'
             value={form.rent}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, rent: e.target.value }))
-            }
+            onChange={(e) => {
+              // Optionnel: ajouter une validation pour le format de prix
+              const value = e.target.value;
+              // Vous pouvez ajouter une validation plus complexe ici si nécessaire
+              if (/^\d*\.?\d*$/.test(value)) {
+                setForm((prev) => ({ ...prev, rent: value }));
+              }
+            }}
+            placeholder="Enter rent amount"
           />
         </Grid>
         <Grid item xs={12}>
@@ -175,31 +197,16 @@ const Contracts = () => {
             Create Contract
           </Button>
         </Grid>
-        <Grid item xs={12}>
-          {contracts.map((contract) => (
-            <Card key={contract.id} variant="outlined">
-              <CardContent>
-                <Typography variant="h6">
-                  {contract.property.address}
-                </Typography>
-                <Typography>Tenant: {contract.tenant.name}</Typography>
-                <Typography>Start Date: {contract.startDate}</Typography>
-                <Typography>End Date: {contract.endDate}</Typography>
-                <Typography>Rent: {contract.rent}</Typography>
-              </CardContent>
-              <CardActions>
-                <Button
-                  size="small"
-                  onClick={() => handleSelectContract(contract)}
-                >
-                  View Details
-                </Button>
-                {/* Add more actions like Edit or Delete */}
-              </CardActions>
-            </Card>
-          ))}
-        </Grid>
       </Grid>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+      >
+        <MuiAlert onClose={handleCloseSnackbar} severity="error">
+          {error}
+        </MuiAlert>
+      </Snackbar>
     </div>
   );
 };

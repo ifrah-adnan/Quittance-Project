@@ -108,7 +108,9 @@ const Layout = ({ children, onSearch }) => {
             </IconButton>
           </StyledToolbar>
         </StyledAppBar>
-        <Container sx={{ marginTop: 4 }}>{children}</Container>
+        <Box component="main" sx={{ flexGrow: 1, p: 1, marginTop: "64px" }}>
+          {children}
+        </Box>{" "}
       </Box>
     </div>
   );
