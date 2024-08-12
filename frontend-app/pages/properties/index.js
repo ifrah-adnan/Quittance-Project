@@ -7,14 +7,103 @@ import {
   Grid,
   Box,
   Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CardComponent from "../../components/CardComponent";
+import LinkButton from "../../components/LinkButton";
+
+const PropertyStatusDialog = ({ propertyId, open, onClose }) => {
+  const [status, setStatus] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchStatus = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await axios.get(
+        `http://localhost:3001/property/${propertyId}/status`
+      );
+      setStatus(response.data);
+    } catch (err) {
+      setError("Failed to fetch property status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      fetchStatus();
+    }
+  }, [open, propertyId]);
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Property Status</DialogTitle>
+      <DialogContent>
+        {loading && <Typography>Loading...</Typography>}
+        {error && <Typography color="error">{error}</Typography>}
+        {status && (
+          <>
+            <Typography>Rented: {status.isRented ? "Yes" : "No"}</Typography>
+            <Typography>Paid: {status.isPaid ? "Yes" : "No"}</Typography>
+            {status.contractDetails && (
+              <>
+                <Typography>
+                  Contract Start:{" "}
+                  {new Date(
+                    status.contractDetails.startDate
+                  ).toLocaleDateString()}
+                </Typography>
+                <Typography>
+                  Contract End:{" "}
+                  {new Date(
+                    status.contractDetails.endDate
+                  ).toLocaleDateString()}
+                </Typography>
+                <Typography>
+                  Rent Amount: ${status.contractDetails.rentAmount}
+                </Typography>
+              </>
+            )}
+            {status.latestPayment && (
+              <>
+                <Typography>
+                  Latest Payment Due:{" "}
+                  {new Date(status.latestPayment.dueDate).toLocaleDateString()}
+                </Typography>
+                <Typography>
+                  Amount Due: ${status.latestPayment.amountDue}
+                </Typography>
+                <Typography>
+                  Amount Paid: ${status.latestPayment.amountPaid}
+                </Typography>
+                <Typography>
+                  Payment Status: {status.latestPayment.paymentStatus}
+                </Typography>
+              </>
+            )}
+          </>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Close</Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 const Properties = ({ searchQuery }) => {
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState(null);
 
   useEffect(() => {
     fetchProperties();
@@ -34,6 +123,11 @@ const Properties = ({ searchQuery }) => {
       .delete(`http://localhost:3001/properties/${id}`)
       .then(() => fetchProperties())
       .catch(() => setError("Error deleting property"));
+  };
+
+  const handleViewStatus = (id) => {
+    setSelectedPropertyId(id);
+    setDialogOpen(true);
   };
 
   const filteredProperties = properties.filter((property) =>
@@ -64,10 +158,17 @@ const Properties = ({ searchQuery }) => {
                 "propertyNumber",
               ]}
               editLink="/properties/edit"
+              onViewStatus={handleViewStatus}
             />
           </Grid>
         ))}
       </Grid>
+
+      <PropertyStatusDialog
+        propertyId={selectedPropertyId}
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+      />
 
       {/* Bouton Add Property en bas à droite */}
       <Box
@@ -79,15 +180,7 @@ const Properties = ({ searchQuery }) => {
           borderRadius: "50%",
         }}
       >
-        <Button
-          variant="contained"
-          color="primary"
-          href="/properties/add"
-          startIcon={<AddIcon />}
-          size="large"
-        >
-          Add Property
-        </Button>
+        <LinkButton href="/properties/add">Add Property</LinkButton>
       </Box>
     </div>
   );

@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import { Search } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useAuth } from "../AuthContext"; // Importer le contexte d'authentification
 
 import {
-  Container,
   AppBar,
   Toolbar,
   Typography,
@@ -49,10 +49,11 @@ const StyledSearchInput = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const Layout = ({ children, onSearch }) => {
+const Layout = ({ children, onSearch, exclude }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { isAuthenticated } = useAuth(); // Utiliser le contexte d'authentification
 
   useEffect(() => {
     setMounted(true);
@@ -70,47 +71,55 @@ const Layout = ({ children, onSearch }) => {
     setTheme(theme === "light" ? "dark" : "light");
   };
 
+  // Si la route actuelle est dans la liste des exclusions, ne pas afficher le Layout
+  if (exclude) {
+    return children;
+  }
+
   if (!mounted) return null; // Ne rend rien avant le premier rendu
 
   return (
     <div style={{ display: "flex" }}>
-      <Sidebar />
+      {isAuthenticated && <Sidebar />}{" "}
+      {/* Afficher la Sidebar si authentifié */}
       <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
-        <StyledAppBar position="static">
-          <StyledToolbar>
-            <Typography
-              variant="h6"
-              noWrap
-              component="div"
-              sx={{ flexGrow: 1 }}
-            >
-              MyApp
-            </Typography>
-            <div className="relative">
-              <StyledSearchInput
-                placeholder="Search or jump to..."
-                value={searchTerm}
-                onChange={handleSearchChange}
-                startAdornment={
-                  <IconButton>
-                    <Search className="text-gray-400" size={18} />
-                  </IconButton>
-                }
-              />
-            </div>
-            <IconButton
-              onClick={toggleTheme}
-              sx={{
-                color: "#24292f",
-              }}
-            >
-              {theme === "light" ? <Moon size={24} /> : <Sun size={24} />}
-            </IconButton>
-          </StyledToolbar>
-        </StyledAppBar>
+        {isAuthenticated && ( // Afficher le AppBar uniquement si authentifié
+          <StyledAppBar position="static">
+            <StyledToolbar>
+              <Typography
+                variant="h6"
+                noWrap
+                component="div"
+                sx={{ flexGrow: 1 }}
+              >
+                MyApp
+              </Typography>
+              <div className="relative">
+                <StyledSearchInput
+                  placeholder="Search or jump to..."
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                  startAdornment={
+                    <IconButton>
+                      <Search className="text-gray-400" size={18} />
+                    </IconButton>
+                  }
+                />
+              </div>
+              <IconButton
+                onClick={toggleTheme}
+                sx={{
+                  color: "#24292f",
+                }}
+              >
+                {theme === "light" ? <Moon size={24} /> : <Sun size={24} />}
+              </IconButton>
+            </StyledToolbar>
+          </StyledAppBar>
+        )}
         <Box component="main" sx={{ flexGrow: 1, p: 1, marginTop: "64px" }}>
           {children}
-        </Box>{" "}
+        </Box>
       </Box>
     </div>
   );

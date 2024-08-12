@@ -14,8 +14,16 @@ import Link from "next/link";
 import HomeIcon from "@mui/icons-material/Home";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import HouseIcon from "@mui/icons-material/House";
+import { InfoIcon } from "lucide-react";
 
-const CardComponent = ({ item, onDelete, onEdit, fields, editLink }) => {
+const CardComponent = ({
+  item,
+  onDelete,
+  onEdit,
+  fields,
+  editLink,
+  onViewStatus,
+}) => {
   return (
     <Card
       elevation={3}
@@ -69,6 +77,15 @@ const CardComponent = ({ item, onDelete, onEdit, fields, editLink }) => {
           variant="outlined"
         >
           Edit
+        </Button>
+        <Button
+          size="small"
+          color="info"
+          onClick={() => onViewStatus(item.id)}
+          variant="outlined"
+          startIcon={<InfoIcon />}
+        >
+          View Status
         </Button>
         <Button
           size="small"

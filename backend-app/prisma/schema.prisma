@@ -7,19 +7,40 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant?  @relation(fields: [tenantId], references: [id])
+  tenantId  String?
+  property  Property?  @relation(fields: [propertyId], references: [id])
+  propertyId  String?
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
 model Property {
-  id            String             @id @default(uuid())
+  id             String             @id @default(uuid())
   propertyNumber String             @unique
-  propertyType  PropertyType
-  name          String
-  address       String
-  city          String
-  state         String
-  zipCode       String
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
-  tenants       TenantProperties[]
-  contracts     Contract[]         
+  propertyType   PropertyType
+  name           String
+  address        String
+  city           String
+  state          String
+  zipCode        String
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  tenants        TenantProperties[]
+  contracts      Contract[]
+  users          User[]
+
 }
 
 model Tenant {
@@ -34,30 +55,29 @@ model Tenant {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
   properties     TenantProperties[]
-  contracts      Contract[]          
+  contracts      Contract[]
+  users          User[]
 }
 
 model TenantProperties {
-  id         String    @id @default(uuid())
+  id         String   @id @default(uuid())
   tenantId   String
   propertyId String
-  tenant     Tenant    @relation(fields: [tenantId], references: [id])
-  property   Property  @relation(fields: [propertyId], references: [id])
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  property   Property @relation(fields: [propertyId], references: [id])
 }
 
-
 model RentalPayment {
-  id            String         @id @default(uuid())
+  id            String        @id @default(uuid())
   contractId    String
   dueDate       DateTime
   amountDue     Float
   amountPaid    Float
   paymentStatus PaymentStatus
   paymentDate   DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-
-  contract      Contract       @relation(fields: [contractId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  contract      Contract      @relation(fields: [contractId], references: [id])
 }
 
 enum PaymentStatus {
@@ -68,19 +88,18 @@ enum PaymentStatus {
 }
 
 model Contract {
-  id            String          @id @default(uuid())
-  tenantId      String
-  propertyId    String
-  startDate     DateTime
-  endDate       DateTime
-  rentAmount    Float
-  terms         String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-
-  tenant        Tenant          @relation(fields: [tenantId], references: [id])
-  property      Property        @relation(fields: [propertyId], references: [id])
-  rentalPayments RentalPayment[] 
+  id             String          @id @default(uuid())
+  tenantId       String
+  propertyId     String
+  startDate      DateTime
+  endDate        DateTime
+  rentAmount     Float
+  terms          String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  property       Property        @relation(fields: [propertyId], references: [id])
+  rentalPayments RentalPayment[]
 }
 
 enum TenantType {

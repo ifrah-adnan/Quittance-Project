@@ -17,6 +17,8 @@ import {
   Button,
   Tooltip,
   IconButton,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
@@ -103,6 +105,25 @@ const RentalRecords = ({ searchQuery }) => {
     setSnackbarOpen(false);
   };
 
+  const handleStatusChange = (id, newStatus) => {
+    axios
+      .patch(`http://localhost:3001/rentalrecords/${id}`, {
+        paymentStatus: newStatus,
+      })
+      .then(() => {
+        setRentalRecords((prevRecords) =>
+          prevRecords.map((record) =>
+            record.id === id ? { ...record, paymentStatus: newStatus } : record
+          )
+        );
+        setSnackbarOpen(true);
+      })
+      .catch(() => {
+        setError("Failed to update rental record status.");
+        setSnackbarOpen(true);
+      });
+  };
+
   const filteredRecords = rentalRecords.filter(
     (record) =>
       (record.contract.tenant.name
@@ -181,11 +202,22 @@ const RentalRecords = ({ searchQuery }) => {
                       ${record.amountPaid.toFixed(2)}
                     </TableCell>
                     <TableCell>
-                      <StatusChip
-                        label={record.paymentStatus}
-                        paymentstatus={record.paymentStatus}
+                      <Select
+                        value={record.paymentStatus}
+                        onChange={(e) =>
+                          handleStatusChange(record.id, e.target.value)
+                        }
                         size="small"
-                      />
+                        sx={{ width: 120 }}
+                      >
+                        {["PENDING", "PAID", "PARTIAL", "LATE"].map(
+                          (status) => (
+                            <MenuItem key={status} value={status}>
+                              {status}
+                            </MenuItem>
+                          )
+                        )}
+                      </Select>
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title="Edit">

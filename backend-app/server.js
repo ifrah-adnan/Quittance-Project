@@ -423,7 +423,76 @@ app.get("/rental-payments/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+app.patch("/rentalrecords/:id", async (req, res) => {
+  const { id } = req.params;
 
+  const { paymentStatus } = req.body;
+
+  try {
+    const updatedPayment = await prisma.rentalPayment.update({
+      where: { id: id },
+      data: { paymentStatus: paymentStatus },
+    });
+
+    res.status(200).json(updatedPayment);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to update payment status", error });
+  }
+});
+app.get("/property/:id/status", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const property = await prisma.property.findUnique({
+      where: { id },
+      include: {
+        contracts: {
+          include: {
+            rentalPayments: {
+              orderBy: { dueDate: "desc" },
+              take: 1,
+            },
+          },
+          orderBy: { endDate: "desc" },
+          take: 1,
+        },
+      },
+    });
+
+    if (!property) {
+      return res.status(404).json({ message: "Property not found" });
+    }
+
+    const latestContract = property.contracts[0];
+    const isRented =
+      latestContract && new Date(latestContract.endDate) > new Date();
+    const latestPayment = latestContract?.rentalPayments[0];
+    const isPaid = latestPayment?.paymentStatus === "PAID";
+
+    res.json({
+      isRented,
+      isPaid,
+      contractDetails: latestContract
+        ? {
+            startDate: latestContract.startDate,
+            endDate: latestContract.endDate,
+            rentAmount: latestContract.rentAmount,
+          }
+        : null,
+      latestPayment: latestPayment
+        ? {
+            dueDate: latestPayment.dueDate,
+            amountDue: latestPayment.amountDue,
+            amountPaid: latestPayment.amountPaid,
+            paymentStatus: latestPayment.paymentStatus,
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 // Route pour mettre à jour un enregistrement de paiement de location
 app.put("/rental-payments/:id", async (req, res) => {
   const { id } = req.params;

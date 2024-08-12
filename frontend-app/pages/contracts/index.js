@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import jsPDF from "jspdf";
+
 import {
   Typography,
   CircularProgress,
@@ -13,14 +15,25 @@ import {
   Paper,
   Button,
   Box,
+  Tooltip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
 } from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
 
-const Contracts = () => {
+import { styled } from "@mui/material/styles";
+import GetAppIcon from "@mui/icons-material/GetApp";
+import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import "jspdf-autotable";
+const StyledButton = styled(Button)(({ theme }) => ({
+  margin: theme.spacing(1),
+}));
+
+const Contracts = ({ searchQuery }) => {
   const [contracts, setContracts] = useState([]);
   const [tenants, setTenants] = useState([]);
   const [properties, setProperties] = useState([]);
@@ -28,6 +41,7 @@ const Contracts = () => {
   const [error, setError] = useState("");
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [contractToDelete, setContractToDelete] = useState(null);
+  const [statusFilter, setStatusFilter] = useState([]);
 
   useEffect(() => {
     fetchContracts();
@@ -100,6 +114,254 @@ const Contracts = () => {
       day: "2-digit",
     });
   };
+  const filteredContract = contracts.filter(
+    (record) =>
+      (record.tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        record.property.propertyNumber
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase())) &&
+      (statusFilter.length === 0 || statusFilter.includes(record.paymentStatus))
+  );
+  const handleDownloadPDF = (contract) => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+
+    // Fonction pour centrer le texte
+    const centerText = (text, y) => {
+      const textWidth =
+        (doc.getStringUnitWidth(text) * doc.internal.getFontSize()) /
+        doc.internal.scaleFactor;
+      const x = (pageWidth - textWidth) / 2;
+      doc.text(text, x, y);
+    };
+
+    // Titre du document
+    doc.setFontSize(24);
+    doc.setTextColor(0, 87, 183); // Bleu
+    centerText("QUITTANCEDELOYER", 20);
+
+    // Fonction pour ajouter du texte avec un style spécifique
+    const addText = (
+      text,
+      x,
+      y,
+      fontSize = 10,
+      color = [0, 0, 0],
+      isBold = false
+    ) => {
+      doc.setFontSize(fontSize);
+      doc.setTextColor(...color);
+      isBold
+        ? doc.setFont("helvetica", "bold")
+        : doc.setFont("helvetica", "normal");
+      doc.text(text, x, y);
+    };
+
+    // Référence
+    addText(
+      `REF : QL ${contract.id.slice(0, 8)}-${contract.id.slice(-4)}`,
+      14,
+      35,
+      11,
+      [0, 87, 183],
+      true
+    );
+
+    // Quittance de loyer du mois
+    const startDate = new Date(contract.startDate);
+    addText(
+      `Quittance de loyer du mois de ${startDate.toLocaleString("fr-FR", {
+        month: "long",
+        year: "numeric",
+      })}`,
+      14,
+      45,
+      11,
+      [0, 87, 183],
+      true
+    );
+
+    // Adresse du bien
+    const property = contract.property;
+    addText(`Adresse du bien : ${property.name}`, 14, 55);
+    addText(`Code postal : ${property.zipCode}`, 14, 60);
+    addText(`Ville : ${property.city}`, 14, 65);
+    addText(`Titre foncier : ${property.propertyNumber}`, 14, 70);
+
+    // Déclarant
+    const tenant = contract.tenant;
+    addText("Déclarant :", 14, 80, 11, [0, 87, 183], true);
+    addText(
+      `Je soussigné(e) ${tenant.name}, ${
+        tenant.tenantType === "PERSON" ? "personne physique" : "société"
+      }`,
+      14,
+      90
+    );
+    addText(`Déclare avoir reçu de :`, 14, 100);
+    addText(
+      `La société ${tenant.name}, siège social ${tenant.address}`,
+      14,
+      105
+    );
+    addText(
+      `représentée par son gérant M. ${tenant.contactName}, titulaire de la CIN N° ${tenant.contactCin}`,
+      14,
+      110
+    );
+
+    // Somme
+    addText("La somme de :", 14, 125, 11, [0, 87, 183], true);
+    addText(
+      `${numberToWords(contract.rentAmount)} dirhams (${
+        contract.rentAmount
+      } DHS),`,
+      14,
+      135
+    );
+
+    // Au titre de
+    addText("Au titre de :", 14, 150, 11, [0, 87, 183], true);
+    addText(
+      `Paiement du loyer pour la période de location du ${new Date(
+        contract.startDate
+      ).toLocaleDateString("fr-FR")} au ${new Date(
+        contract.endDate
+      ).toLocaleDateString("fr-FR")} : ${contract.rentAmount} DHS`,
+      14,
+      160
+    );
+
+    // Détail du règlement
+    addText("DÉTAIL DU RÈGLEMENT :", 14, 175, 11, [0, 87, 183], true);
+    addText(`Loyer               : ${contract.rentAmount} Dirhams`, 14, 185);
+    addText(`Provision pour charges : 0,00 Dirhams`, 14, 190);
+    addText(`Total               : ${contract.rentAmount} Dirhams`, 14, 195);
+    addText(
+      `Date du paiement    : ${new Date().toLocaleDateString("fr-FR")}`,
+      14,
+      200
+    );
+
+    // Signature
+    addText(
+      `Fait à : ${property.city} le ${new Date().toLocaleDateString("fr-FR")}`,
+      14,
+      220
+    );
+    addText("Signature du bailleur", 14, 235);
+
+    // Génération du PDF
+    doc.save(`QuittanceLoyer_${contract.id.slice(0, 8)}.pdf`);
+  };
+
+  function numberToWords(number) {
+    const units = [
+      "",
+      "un",
+      "deux",
+      "trois",
+      "quatre",
+      "cinq",
+      "six",
+      "sept",
+      "huit",
+      "neuf",
+      "dix",
+      "onze",
+      "douze",
+      "treize",
+      "quatorze",
+      "quinze",
+      "seize",
+      "dix-sept",
+      "dix-huit",
+      "dix-neuf",
+    ];
+    const tens = [
+      "",
+      "",
+      "vingt",
+      "trente",
+      "quarante",
+      "cinquante",
+      "soixante",
+      "soixante-dix",
+      "quatre-vingt",
+      "quatre-vingt-dix",
+    ];
+
+    function convertLessThanOneThousand(n) {
+      if (n === 0) return "";
+
+      let result = "";
+
+      if (n >= 100) {
+        result +=
+          units[Math.floor(n / 100)] + (n >= 200 ? " cent" : " cents") + " ";
+        n %= 100;
+      }
+
+      if (n >= 20) {
+        const tenIndex = Math.floor(n / 10);
+        result += tens[tenIndex];
+        if (n % 10 === 1 && tenIndex !== 8) result += " et";
+        result += " ";
+        n %= 10;
+      }
+
+      if (n > 0) {
+        if (n <= 19) {
+          result += units[n];
+        } else {
+          result += units[n];
+        }
+      }
+
+      return result.trim();
+    }
+
+    if (number === 0) return "zéro";
+
+    let result = "";
+    let billions = Math.floor(number / 1000000000);
+    let millions = Math.floor((number % 1000000000) / 1000000);
+    let thousands = Math.floor((number % 1000000) / 1000);
+    let remainder = number % 1000;
+
+    if (billions > 0) {
+      result +=
+        convertLessThanOneThousand(billions) +
+        " milliard" +
+        (billions > 1 ? "s" : "") +
+        " ";
+    }
+
+    if (millions > 0) {
+      result +=
+        convertLessThanOneThousand(millions) +
+        " million" +
+        (millions > 1 ? "s" : "") +
+        " ";
+    }
+
+    if (thousands > 0) {
+      result += convertLessThanOneThousand(thousands) + " mille ";
+    }
+
+    if (remainder > 0) {
+      result += convertLessThanOneThousand(remainder);
+    }
+
+    return result.trim();
+  }
+
+  const StyledTableCell = styled(TableCell)(({ theme }) => ({
+    fontWeight: "bold",
+    backgroundColor: theme.palette.primary.main,
+    color: theme.palette.common.white,
+  }));
+  console.log("this is data ", contracts);
 
   return (
     <Box>
@@ -119,21 +381,35 @@ const Contracts = () => {
           onClose={() => setError("")}
         />
       )}
-      <TableContainer component={Paper}>
-        <Table>
+      <TableContainer component={Paper} elevation={3}>
+        <Table sx={{ minWidth: 650 }} aria-label="Contract">
           <TableHead>
             <TableRow>
-              <TableCell>Tenant Name</TableCell>
-              <TableCell>Property Number</TableCell>
-              <TableCell>Start Date</TableCell>
-              <TableCell>End Date</TableCell>
-              <TableCell>Rent Amount</TableCell>
-              <TableCell>Terms</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
+              <StyledTableCell sx={{ fontWeight: "bold" }}>
+                Tenant Name
+              </StyledTableCell>
+              <StyledTableCell sx={{ fontWeight: "bold" }}>
+                Property Number
+              </StyledTableCell>
+              <StyledTableCell sx={{ fontWeight: "bold" }}>
+                Start Date
+              </StyledTableCell>
+              <StyledTableCell sx={{ fontWeight: "bold" }}>
+                End Date
+              </StyledTableCell>
+              <StyledTableCell sx={{ fontWeight: "bold" }}>
+                Rent Amount
+              </StyledTableCell>
+              <StyledTableCell sx={{ fontWeight: "bold" }}>
+                Terms
+              </StyledTableCell>
+              <StyledTableCell sx={{ fontWeight: "bold" }}>
+                Actions
+              </StyledTableCell>
+            </TableRow>{" "}
           </TableHead>
           <TableBody>
-            {contracts.map((contract) => (
+            {filteredContract.map((contract) => (
               <TableRow key={contract.id}>
                 <TableCell>{getTenantName(contract.tenantId)}</TableCell>
                 <TableCell>{getPropertyAddress(contract.propertyId)}</TableCell>
@@ -142,21 +418,30 @@ const Contracts = () => {
                 <TableCell>{contract.rentAmount}</TableCell>
                 <TableCell>{contract.terms}</TableCell>
                 <TableCell>
-                  <Button
+                  <StyledButton
                     variant="contained"
                     color="error"
+                    startIcon={<DeleteIcon />}
                     onClick={() => handleDeleteContract(contract)}
                   >
                     Delete
-                  </Button>
-                  <Button
+                  </StyledButton>
+                  <StyledButton
                     variant="contained"
                     color="primary"
+                    startIcon={<EditIcon />}
                     href={`/contracts/edit?id=${contract.id}`}
-                    style={{ marginLeft: "8px" }}
                   >
                     Edit
-                  </Button>
+                  </StyledButton>
+                  <StyledButton
+                    variant="contained"
+                    color="secondary"
+                    startIcon={<GetAppIcon />}
+                    onClick={() => handleDownloadPDF(contract)}
+                  >
+                    PDF
+                  </StyledButton>
                 </TableCell>
               </TableRow>
             ))}
@@ -166,19 +451,29 @@ const Contracts = () => {
       <Box
         sx={{
           position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: "white",
-          borderTop: "1px solid #ccc",
-          padding: "16px",
-          display: "flex",
-          justifyContent: "flex-end",
+          bottom: 24,
+          right: 24,
+          zIndex: 1000,
         }}
       >
-        <Button variant="contained" color="primary" href="/contracts/add">
-          Add Contract
-        </Button>
+        <Tooltip title="Add New Contract">
+          <Button
+            variant="contained"
+            color="primary"
+            href="/contracts/add"
+            startIcon={<AddIcon />}
+            size="large"
+            sx={{
+              borderRadius: 28,
+              boxShadow: (theme) => theme.shadows[4],
+              "&:hover": {
+                boxShadow: (theme) => theme.shadows[8],
+              },
+            }}
+          >
+            Add Contract
+          </Button>
+        </Tooltip>
       </Box>
 
       {showDeleteConfirmation && (
