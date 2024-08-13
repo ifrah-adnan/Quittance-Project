@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import { Search } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useAuth } from "../AuthContext"; // Importer le contexte d'authentification
+import { useAuth } from "../AuthContext";
 
 import {
   AppBar,
@@ -11,6 +11,10 @@ import {
   InputBase,
   Box,
   IconButton,
+  Button,
+  Menu,
+  MenuItem,
+  Avatar,
 } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import { Moon, Sun } from "lucide-react";
@@ -48,12 +52,18 @@ const StyledSearchInput = styled(InputBase)(({ theme }) => ({
     color: "#6a737d",
   },
 }));
-
 const Layout = ({ children, onSearch, exclude }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { isAuthenticated } = useAuth(); // Utiliser le contexte d'authentification
+  const { isAuthenticated, user, logout } = useAuth();
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  console.log("Is Authenticated in Layout:", isAuthenticated);
+
+  useEffect(() => {
+    console.log("Is Authenticated changed:", isAuthenticated);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     setMounted(true);
@@ -71,19 +81,30 @@ const Layout = ({ children, onSearch, exclude }) => {
     setTheme(theme === "light" ? "dark" : "light");
   };
 
-  // Si la route actuelle est dans la liste des exclusions, ne pas afficher le Layout
+  const handleMenuOpen = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLogout = () => {
+    logout();
+    handleMenuClose();
+  };
+
   if (exclude) {
     return children;
   }
 
-  if (!mounted) return null; // Ne rend rien avant le premier rendu
+  if (!mounted) return null;
 
   return (
     <div style={{ display: "flex" }}>
-      {isAuthenticated && <Sidebar />}{" "}
-      {/* Afficher la Sidebar si authentifié */}
+      {isAuthenticated && <Sidebar />}
       <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
-        {isAuthenticated && ( // Afficher le AppBar uniquement si authentifié
+        {isAuthenticated && (
           <StyledAppBar position="static">
             <StyledToolbar>
               <Typography
@@ -106,14 +127,26 @@ const Layout = ({ children, onSearch, exclude }) => {
                   }
                 />
               </div>
-              <IconButton
-                onClick={toggleTheme}
-                sx={{
-                  color: "#24292f",
-                }}
-              >
+              <IconButton onClick={toggleTheme} sx={{ color: "#24292f" }}>
                 {theme === "light" ? <Moon size={24} /> : <Sun size={24} />}
               </IconButton>
+              <Button
+                onClick={handleMenuOpen}
+                startIcon={
+                  <Avatar sx={{ width: 24, height: 24 }}>
+                    {user?.name?.charAt(0)}
+                  </Avatar>
+                }
+              >
+                {user?.name}
+              </Button>
+              <Menu
+                anchorEl={anchorEl}
+                open={Boolean(anchorEl)}
+                onClose={handleMenuClose}
+              >
+                <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              </Menu>
             </StyledToolbar>
           </StyledAppBar>
         )}
