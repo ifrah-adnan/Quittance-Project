@@ -5,8 +5,10 @@ require("dotenv").config();
 
 const app = express();
 const port = 3001;
+const authRoutes = require("./auth");
 
 const prisma = new PrismaClient();
+const jwt = require("jsonwebtoken");
 
 // Middleware to parse JSON
 app.use(express.json());
@@ -34,11 +36,49 @@ const getAllowedTypes = async (model) => {
   const types = await prisma[model].findMany();
   return types.map((type) => type.name); // Adjust according to your model's field name
 };
+app.use("/api", authRoutes);
 
 // Endpoints for property types
 app.get("/property-types", (req, res) => {
   const propertyTypes = Object.keys(PropertyType); // ['VILLA', 'APARTMENT', ...]
   res.json(propertyTypes);
+});
+const JWT_SECRET = "votre_clé_secrète";
+
+// Middleware pour vérifier le token JWT
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1]; // Extrait le token
+  console.log("this is token ", token);
+  if (token == null) return res.sendStatus(401);
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) {
+      console.error("Token verification error:", err.message); // Affiche l'erreur
+      return res.sendStatus(403);
+    }
+    req.user = user;
+    next();
+  });
+};
+// Route pour récupérer les informations utilisateur
+app.get("/user", authenticateToken, async (req, res) => {
+  try {
+    // Trouver l'utilisateur dans la base de données en utilisant l'ID du token
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Répondre avec les informations utilisateur
+    res.json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Something went wrong" });
+  }
 });
 
 // Endpoints for tenant types

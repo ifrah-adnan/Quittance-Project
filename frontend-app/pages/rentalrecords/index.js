@@ -404,6 +404,13 @@ const RentalRecords = ({ searchQuery }) => {
         : [...prevFilter, status]
     );
   };
+  const statusStyles = {
+    PENDING: { color: "#FFA500", backgroundColor: "#FFF5E6" },
+    PAID: { color: "#4CAF50", backgroundColor: "#E8F5E9" },
+    PARTIAL: { color: "#2196F3", backgroundColor: "#E3F2FD" },
+    LATE: { color: "#F44336", backgroundColor: "#FFEBEE" },
+    DEFAULT: { color: "#757575", backgroundColor: "#F5F5F5" },
+  };
 
   return (
     <Box sx={{ py: 4 }}>
@@ -458,28 +465,18 @@ const RentalRecords = ({ searchQuery }) => {
                       {new Date(record.dueDate).toLocaleDateString()}
                     </TableCell>
                     <TableCell align="right">
-                      ${record.amountDue.toFixed(2)}
+                      {record.amountDue.toFixed(2)} MAD
                     </TableCell>
                     <TableCell align="right">
-                      ${record.amountPaid.toFixed(2)}
+                      {record.amountPaid.toFixed(2)} MAD
                     </TableCell>
-                    <TableCell>
-                      <Select
-                        value={record.paymentStatus}
-                        onChange={(e) =>
-                          handleStatusChange(record.id, e.target.value)
-                        }
-                        size="small"
-                        sx={{ width: 120 }}
-                      >
-                        {["PENDING", "PAID", "PARTIAL", "LATE"].map(
-                          (status) => (
-                            <MenuItem key={status} value={status}>
-                              {status}
-                            </MenuItem>
-                          )
-                        )}
-                      </Select>
+                    <TableCell
+                      style={
+                        statusStyles[record.paymentStatus] ||
+                        statusStyles.DEFAULT
+                      }
+                    >
+                      {record.paymentStatus}
                     </TableCell>
                     <TableCell align="center">
                       <Tooltip title="Edit">
@@ -491,7 +488,7 @@ const RentalRecords = ({ searchQuery }) => {
                           <EditIcon />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Delete">
+                      {/* <Tooltip title="Delete">
                         <IconButton
                           color="error"
                           size="small"
@@ -499,7 +496,7 @@ const RentalRecords = ({ searchQuery }) => {
                         >
                           <DeleteIcon />
                         </IconButton>
-                      </Tooltip>
+                      </Tooltip> */}
                       <Tooltip title="Télécharger la quittance">
                         <IconButton
                           color="secondary"

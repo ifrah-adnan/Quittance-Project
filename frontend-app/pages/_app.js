@@ -15,7 +15,7 @@ const MyApp = ({ Component, pageProps }) => {
 
   return (
     <NextUIProvider>
-      <NextThemesProvider attribute="class" defaultTheme="dark">
+      <NextThemesProvider attribute="class" defaultTheme="light">
         {/* <CssBaseline /> */}
         <AuthProvider>
           <Layout onSearch={handleSearch}>

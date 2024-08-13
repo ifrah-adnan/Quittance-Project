@@ -21,17 +21,26 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // try {
-    //   await axios.post("http://localhost:3001/login", {
-    //     email,
-    //     password,
-    //   });
-    setSuccess("Login successful!");
-    login(); // Mettez à jour le contexte d'authentification
-    router.push("/properties");
-    // } catch (err) {
-    //   setError("Login failed!");
-    // }
+    try {
+      const response = await axios.post("http://localhost:3001/api/login", {
+        email,
+        password,
+      });
+
+      // Supposons que la réponse contienne un token
+      const { token } = response.data;
+
+      // Stocker le token dans le localStorage ou sessionStorage
+      localStorage.setItem("authToken", token);
+
+      // Mettez à jour le contexte d'authentification
+      login(); // Met à jour le contexte si nécessaire
+
+      setSuccess("Login successful!");
+      router.push("/properties");
+    } catch (err) {
+      setError("Login failed! Please check your credentials.");
+    }
   };
 
   return (
