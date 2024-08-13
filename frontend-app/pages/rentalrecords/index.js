@@ -27,6 +27,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import DownloadIcon from "@mui/icons-material/Download";
 import { jsPDF } from "jspdf";
 import "jspdf-autotable";
+import { useAuth } from "../../AuthContext";
 
 const StatusChip = styled(Chip)(({ theme, paymentstatus }) => ({
   backgroundColor:
@@ -66,6 +67,7 @@ const RentalRecords = ({ searchQuery }) => {
   const [error, setError] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState([]);
+  const { isAuthenticated, user, logout } = useAuth();
 
   useEffect(() => {
     fetchRentalRecords();
@@ -119,11 +121,7 @@ const RentalRecords = ({ searchQuery }) => {
     // Adresse du bien
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0); // Noir
-    doc.text(
-      "Adresse du bien : Magasin lotissement Al Weroua Sidi Maarouf",
-      20,
-      50
-    );
+    doc.text(`Adresse du bien : ${record.contract.property.city}`, 20, 50);
     doc.text(`Code postal : ${record.contract.property.zipCode}`, 20, 55);
     doc.text(`Ville : ${record.contract.property.city}`, 20, 60);
     doc.text("Titre foncier : N°T-45/89862", 20, 65);
@@ -141,7 +139,7 @@ const RentalRecords = ({ searchQuery }) => {
       80
     );
     doc.text(
-      "Casablanca sous le numéro 541253, représentée par son gérant unique [NOM PRÉNOM],",
+      `Casablanca sous le numéro 541253, représentée par son gérant unique ${user.name},`,
       20,
       85
     );
