@@ -59,12 +59,6 @@ const Layout = ({ children, onSearch, exclude }) => {
   const { isAuthenticated, user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
 
-  console.log("Is Authenticated in Layout:", isAuthenticated);
-
-  useEffect(() => {
-    console.log("Is Authenticated changed:", isAuthenticated);
-  }, [isAuthenticated]);
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -94,15 +88,11 @@ const Layout = ({ children, onSearch, exclude }) => {
     handleMenuClose();
   };
 
-  if (exclude) {
-    return children;
-  }
-
   if (!mounted) return null;
 
   return (
     <div style={{ display: "flex" }}>
-      {isAuthenticated && <Sidebar />}
+      {isAuthenticated && user?.role !== "ADMIN" && <Sidebar />}
       <Box sx={{ display: "flex", flexDirection: "column", width: "100%" }}>
         {isAuthenticated && (
           <StyledAppBar position="static">

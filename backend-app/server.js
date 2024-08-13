@@ -339,6 +339,28 @@ app.post("/generate-rental-payments", async (req, res) => {
       .json({ error: "An error occurred while generating rental payments" });
   }
 });
+app.get("/users", async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      include: {
+        tenant: {
+          include: {
+            contracts: {
+              include: {
+                rentalPayments: true,
+              },
+            },
+          },
+        },
+        property: true,
+      },
+    });
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 // Read all contracts
 app.get("/contracts", async (req, res) => {
   try {

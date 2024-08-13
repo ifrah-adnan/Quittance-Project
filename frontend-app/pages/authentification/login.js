@@ -74,11 +74,18 @@ const Login = () => {
         password,
       });
 
-      const { token } = response.data;
+      const { token, user } = response.data;
+      const { role } = user;
       localStorage.setItem("authToken", token);
-      login();
+      login(); // Appelez la fonction login pour mettre à jour le contexte d'authentification
+
+      // Redirection selon le rôle de l'utilisateur
+      if (role === "ADMIN") {
+        window.location.href = "/admin";
+      } else {
+        window.location.href = "/properties";
+      }
       setSuccess("Login successful!");
-      window.location.href = "/properties";
     } catch (err) {
       setError("Login failed! Please check your credentials.");
     }
