@@ -78,7 +78,7 @@ const Login = () => {
       localStorage.setItem("authToken", token);
       login();
       setSuccess("Login successful!");
-      router.push("/properties");
+      window.location.href = "/properties";
     } catch (err) {
       setError("Login failed! Please check your credentials.");
     }
