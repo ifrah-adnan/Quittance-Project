@@ -53,6 +53,7 @@ model Tenant {
   ice            String
   address        String
   contactName    String
+  email          String?
   contactCin     String
   contactInfo    String
   createdAt      DateTime            @default(now())

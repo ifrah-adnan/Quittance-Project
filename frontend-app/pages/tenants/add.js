@@ -22,6 +22,7 @@ const AddTenant = () => {
     contactName: "",
     contactCin: "",
     contactInfo: "",
+    email: "", // Ajout du champ email
   });
   const [tenantTypes, setTenantTypes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -30,9 +31,10 @@ const AddTenant = () => {
   useEffect(() => {
     fetchTenantTypes();
   }, []);
+
   const fetchTenantTypes = () => {
     setLoading(true);
-    // Define tenant types directly in frontend code
+    // Définir les types de tenant directement dans le frontend
     setTenantTypes(["ENTERPRISE", "PERSON"]);
     setLoading(false);
   };
@@ -40,8 +42,17 @@ const AddTenant = () => {
   const handleAddTenant = () => {
     axios
       .post("http://localhost:3001/tenants", tenant)
-      .then(() => router.push("/tenants"))
-      .catch(() => setError("Error adding tenant"));
+      .then(() => {
+        console.log("Tenant added successfully");
+        router.push("/tenants");
+      })
+      .catch((error) => {
+        console.error(
+          "Error adding tenant:",
+          error.response ? error.response.data : error.message
+        );
+        setError("Error adding tenant");
+      });
   };
 
   const handleChange = (e) => {
@@ -125,6 +136,16 @@ const AddTenant = () => {
             label="Contact Info"
             name="contactInfo"
             value={tenant.contactInfo}
+            onChange={handleChange}
+          />
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <TextField
+            fullWidth
+            label="Email"
+            name="email"
+            type="email" // Ajout du champ email
+            value={tenant.email}
             onChange={handleChange}
           />
         </Grid>

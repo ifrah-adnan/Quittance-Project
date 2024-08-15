@@ -213,11 +213,26 @@ app.delete("/properties/:id", async (req, res) => {
 // CRUD operations for Tenant model
 
 // Create a tenant
+const nodemailer = require("nodemailer");
+
+// Configuration du transporteur d'email
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: "ifrahadnan61@gmail.com",
+    pass: "xout wivk byca sdrb", // Remplacez cela par un mot de passe d'application généré par Google
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
+
+// Route pour créer un tenant
 app.post("/tenants", async (req, res) => {
   try {
     const allowedTypes = Object.keys(TenantType); // ['ENTERPRISE', 'PERSON']
 
-    const { tenantType, ...rest } = req.body;
+    const { tenantType, email, ...rest } = req.body;
     if (!allowedTypes.includes(tenantType)) {
       return res.status(400).json({ message: "Invalid tenantType" });
     }
@@ -225,9 +240,27 @@ app.post("/tenants", async (req, res) => {
     const tenant = await prisma.tenant.create({
       data: {
         tenantType,
+        email, // Assuming the tenant has an email field
         ...rest,
       },
     });
+
+    // Envoi de l'email
+    const mailOptions = {
+      from: "ifrahadnan61@gmail.com", // L'adresse email de l'expéditeur
+      to: email, // L'adresse email du destinataire (le nouveau tenant)
+      subject: "Bienvenue chez notre service",
+      text: `Bonjour ${tenant.name},\n\nMerci d'avoir rejoint notre service en tant que ${tenantType}.\n\nCordialement,\nL'équipe`,
+    };
+
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.log("Erreur lors de l'envoi de l'email:", error);
+      } else {
+        console.log("Email envoyé: " + info.response);
+      }
+    });
+
     res.status(201).json(tenant);
   } catch (err) {
     res.status(400).json({ message: err.message });
