@@ -61,6 +61,26 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+app.put("/complete-profile", authenticateToken, async (req, res) => {
+  const { cin, address, phoneNumber } = req.body;
+  const userId = req.user.id; // Assurez-vous que l'identifiant de l'utilisateur est stocké dans req.user après l'authentification
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        cin,
+        address,
+        phoneNumber,
+      },
+    });
+
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ error: "Error updating profile" });
+  }
+});
 // Route pour récupérer les informations utilisateur
 app.get("/user", authenticateToken, async (req, res) => {
   try {

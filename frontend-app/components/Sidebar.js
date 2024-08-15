@@ -15,6 +15,7 @@ import {
   PersonOutlined,
   DescriptionOutlined,
   MonetizationOnOutlined,
+  PersonAddOutlined,
 } from "@mui/icons-material";
 
 const Sidebar = () => {
@@ -61,11 +62,7 @@ const Sidebar = () => {
           className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <ListItemIcon>
-            {open ? (
-              <HomeOutlined className="text-gray-600 dark:text-gray-400" />
-            ) : (
-              <HomeOutlined className="text-gray-600 dark:text-gray-400" />
-            )}
+            <HomeOutlined className="text-gray-600 dark:text-gray-400" />
           </ListItemIcon>
           {open && <ListItemText primary="Properties" />}
         </ListItem>
@@ -76,11 +73,7 @@ const Sidebar = () => {
           className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <ListItemIcon>
-            {open ? (
-              <PersonOutlined className="text-gray-600 dark:text-gray-400" />
-            ) : (
-              <PersonOutlined className="text-gray-600 dark:text-gray-400" />
-            )}
+            <PersonOutlined className="text-gray-600 dark:text-gray-400" />
           </ListItemIcon>
           {open && <ListItemText primary="Tenants" />}
         </ListItem>
@@ -91,28 +84,31 @@ const Sidebar = () => {
           className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <ListItemIcon>
-            {open ? (
-              <DescriptionOutlined className="text-gray-600 dark:text-gray-400" />
-            ) : (
-              <DescriptionOutlined className="text-gray-600 dark:text-gray-400" />
-            )}
+            <DescriptionOutlined className="text-gray-600 dark:text-gray-400" />
           </ListItemIcon>
           {open && <ListItemText primary="Contracts" />}
         </ListItem>
         <ListItem
           button
           component={Link}
-          href="/rentalrecords" // Assurez-vous que cette route est correcte
+          href="/rentalrecords"
           className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
         >
           <ListItemIcon>
-            {open ? (
-              <MonetizationOnOutlined className="text-gray-600 dark:text-gray-400" />
-            ) : (
-              <MonetizationOnOutlined className="text-gray-600 dark:text-gray-400" />
-            )}
+            <MonetizationOnOutlined className="text-gray-600 dark:text-gray-400" />
           </ListItemIcon>
           {open && <ListItemText primary="Rental Records" />}
+        </ListItem>
+        <ListItem
+          button
+          component={Link}
+          href="/complete-profile" // Remplacez par la route correcte
+          className="text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        >
+          <ListItemIcon>
+            <PersonAddOutlined className="text-gray-600 dark:text-gray-400" />
+          </ListItemIcon>
+          {open && <ListItemText primary="Complete Profile" />}
         </ListItem>
       </List>
     </Drawer>
