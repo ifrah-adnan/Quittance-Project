@@ -82,7 +82,7 @@ const Tenants = ({ searchQuery }) => {
         <Button
           variant="contained"
           color="primary"
-          href="/properties/add"
+          href="/tenants/add"
           startIcon={<AddIcon />}
           size="large"
         >

@@ -184,12 +184,22 @@ app.delete("/properties/:id", async (req, res) => {
   const propertyId = req.params.id;
 
   try {
-    // Delete related records in TenantProperties first
+    // Supprimer les contrats associés à la propriété
+    await prisma.contract.deleteMany({
+      where: { propertyId: propertyId },
+    });
+
+    // Supprimer les paiements de location associés à la propriété
+    await prisma.rentalPayment.deleteMany({
+      where: { contract: { propertyId: propertyId } },
+    });
+
+    // Supprimer les associations entre les locataires et la propriété
     await prisma.tenantProperties.deleteMany({
       where: { propertyId: propertyId },
     });
 
-    // Now delete the property
+    // Maintenant supprimer la propriété elle-même
     await prisma.property.delete({
       where: { id: propertyId },
     });
@@ -706,11 +716,29 @@ app.delete("/contracts/:id", async (req, res) => {
 
 // Delete a tenant
 app.delete("/tenants/:id", async (req, res) => {
+  const tenantId = req.params.id;
+
   try {
-    await prisma.tenant.delete({
-      where: { id: req.params.id },
+    // Supprimer les associations de propriétés liées au locataire
+    await prisma.tenantProperties.deleteMany({
+      where: {
+        tenantId: tenantId,
+      },
     });
-    res.json({ message: "Tenant deleted" });
+    await prisma.contract.deleteMany({
+      where: {
+        tenantId: tenantId,
+      },
+    });
+
+    // Supprimer le locataire
+    await prisma.tenant.delete({
+      where: {
+        id: tenantId,
+      },
+    });
+
+    res.json({ message: "Tenant deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
