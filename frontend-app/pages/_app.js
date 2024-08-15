@@ -5,6 +5,7 @@ import { CssBaseline } from "@mui/material";
 import { NextUIProvider } from "@nextui-org/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import "../globale.css";
+import "leaflet/dist/leaflet.css";
 
 const MyApp = ({ Component, pageProps }) => {
   const [searchQuery, setSearchQuery] = useState("");

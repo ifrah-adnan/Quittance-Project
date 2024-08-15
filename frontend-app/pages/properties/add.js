@@ -9,9 +9,8 @@ import {
   Grid,
   Typography,
   Autocomplete,
-  Select,
-  MenuItem,
 } from "@mui/material";
+import MapPicker from "../../components/MapPicker";
 
 const AddProperty = () => {
   const router = useRouter();
@@ -53,222 +52,19 @@ const AddProperty = () => {
     const { name, value } = e.target;
     setProperty((prev) => ({ ...prev, [name]: value }));
   };
+
   const handleCancel = () => {
     router.push("/properties");
   };
 
-  const cities = [
-    "Casablanca",
-    "Rabat",
-    "Marrakech",
-    "Fès",
-    "Tanger",
-    "Agadir",
-    "Meknès",
-    "Oujda",
-    "Kenitra",
-    "Tétouan",
-    "Safi",
-    "El Jadida",
-    "Nador",
-    "Beni Mellal",
-    "Khouribga",
-    "Settat",
-    "Salé",
-    "Mohammedia",
-    "Taza",
-    "Guelmim",
-    "Laâyoune",
-    "Dakhla",
-    "Errachidia",
-    "Ouarzazate",
-    "Taourirt",
-    "Khénifra",
-    "Ifrane",
-    "Berrechid",
-    "Inezgane",
-    "Temara",
-    "Berkane",
-    "Chefchaouen",
-    "Témara",
-    "Larache",
-    "Azrou",
-    "Ksar El Kebir",
-    "Tiznit",
-    "Sidi Kacem",
-    "Alhucemas",
-    "Essaouira",
-    "Ouled Teima",
-    "Boulemane",
-    "Sidi Slimane",
-    "Sidi Bennour",
-    "Midelt",
-    "Tan-Tan",
-    "Taghjijt",
-    "Imilchil",
-    "Taounate",
-    "Ouazzane",
-    "Taroudannt",
-    "Boujdour",
-    "Assa",
-    "Figuig",
-    "Jrada",
-    "Tinghir",
-    "Sidi Ifni",
-    "Rissani",
-    "Zagora",
-    "Sidi Yahya El Gharb",
-    "Tarfaya",
-    "Tazenakht",
-    "Imintanoute",
-    "Tahanaout",
-    "Sidi Rahhal",
-    "Sidi Allal El Bahraoui",
-    "Skhirate",
-    "Sidi Slimane Echcharraa",
-    "Sidi Kacem",
-    "Sidi Hajjaj",
-    "Sidi Bouknadel",
-    "Sidi Bennour",
-    "Sidi Allal Tazi",
-    "Sefrou",
-    "Ouled Abbou",
-    "Ouled Ayad",
-    "Oualidia",
-    "Moulay Bousselham",
-    "Moulay Idriss Zerhoun",
-    "Missour",
-    "Médiouna",
-    "Ksar Sghir",
-    "Kénitra",
-    "Ksabi",
-    "Jorf Lasfar",
-    "Hrara",
-    "Hennaïa",
-    "Guercif",
-    "Goulmima",
-    "Fnideq",
-    "Dakhla",
-    "Dcheira El Jihadia",
-    "Dar Bouazza",
-    "Dar Chaoui",
-    "Bouknadel",
-    "Bouanane",
-    "Bir Anzarane",
-    "Birkhadem",
-    "Ben Slimane",
-    "Asilah",
-    "Arfoud",
-    "Ain Harrouda",
-    "Ain Dorij",
-    "Ain Aïcha",
-    "Ahfir",
-    "Aghbalou",
-    "Agadir",
-    "Zenata",
-    "Youssoufia",
-    "Témara",
-    "Tanger",
-    "Tata",
-    "Taza",
-    "Taourirt",
-    "Taounate",
-    "Taroudannt",
-    "Tan-Tan",
-    "Tangier",
-    "Tangier-Assilah",
-    "Tétouan",
-    "Tiznit",
-    "Salé",
-    "Safi",
-    "Settat",
-    "Sidi Slimane",
-    "Sidi Kacem",
-    "Sidi Ifni",
-    "Skhirate-Témara",
-    "Tinghir",
-    "Khenifra",
-    "Khouribga",
-    "Khémisset",
-    "Kenitra",
-    "Laâyoune",
-    "Larache",
-    "Marrakech",
-    "Meknès",
-    "Mohammadia",
-    "Nador",
-    "Nouaceur",
-    "Ouarzazate",
-    "Oujda",
-    "Oued Zem",
-    "Rabat",
-    "Rissani",
-    "Beni Mellal",
-    "Casablanca",
-    "Dakhla",
-    "Errachidia",
-    "Essaouira",
-    "Fès",
-    "Figuig",
-    "Guercif",
-    "Guelmim",
-    "Inezgane",
-    "Imilchil",
-    "Azrou",
-    "Berkane",
-    "Berrechid",
-    "Boujdour",
-    "Boulemane",
-    "Chefchaouen",
-    "Dakhla-Oued Ed-Dahab",
-    "El Jadida",
-    "Erfoud",
-    "Errachidia",
-    "Essaouira",
-    "Fès",
-    "Figuig",
-    "Guelmim",
-    "Guercif",
-    "Ifrane",
-    "Inezgane",
-    "Kénitra",
-    "Khouribga",
-    "Khémisset",
-    "Khenifra",
-    "Laâyoune",
-    "Larache",
-    "Marrakech",
-    "Meknès",
-    "Midelt",
-    "Mohammadia",
-    "Nador",
-    "Ouarzazate",
-    "Oujda",
-    "Ouled Teima",
-    "Oued Zem",
-    "Rabat",
-    "Rissani",
-    "Safi",
-    "Salé",
-    "Sefrou",
-    "Settat",
-    "Sidi Bennour",
-    "Sidi Ifni",
-    "Sidi Kacem",
-    "Sidi Slimane",
-    "Skhirate-Témara",
-    "Tanger",
-    "Tan-Tan",
-    "Taounate",
-    "Taourirt",
-    "Taroudannt",
-    "Tata",
-    "Taza",
-    "Tétouan",
-    "Tiznit",
-    "Tinghir",
-    "Zagora",
-  ];
+  // Fonction appelée lors de la sélection d'un emplacement sur la carte
+  const handleLocationSelect = (addressData) => {
+    setProperty((prev) => ({
+      ...prev,
+      address: addressData.road || "",
+      city: addressData.city || addressData.town || addressData.village || "",
+    }));
+  };
 
   return (
     <div>
@@ -285,19 +81,6 @@ const AddProperty = () => {
             name="propertyNumber"
             value={property.propertyNumber}
             onChange={handleChange}
-          />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <Autocomplete
-            options={cities}
-            getOptionLabel={(option) => option}
-            renderInput={(params) => (
-              <TextField {...params} label="City" fullWidth />
-            )}
-            value={property.city}
-            onChange={(event, newValue) => {
-              setProperty((prev) => ({ ...prev, city: newValue }));
-            }}
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -334,20 +117,15 @@ const AddProperty = () => {
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
-            label="State"
-            name="state"
-            value={property.state}
+            label="City"
+            name="city"
+            value={property.city}
             onChange={handleChange}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="Zip Code"
-            name="zipCode"
-            value={property.zipCode}
-            onChange={handleChange}
-          />
+        <Grid item xs={12}>
+          {/* Intégrer la carte pour sélectionner l'emplacement */}
+          <MapPicker onSelectLocation={handleLocationSelect} />
         </Grid>
         <Grid item xs={12} display="flex" justifyContent="space-between">
           <Button
