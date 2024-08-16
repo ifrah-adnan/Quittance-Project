@@ -114,17 +114,29 @@ app.post("/properties", async (req, res) => {
   try {
     const allowedTypes = Object.keys(PropertyType); // ['VILLA', 'APARTMENT', ...]
 
-    const { propertyType, ...rest } = req.body;
+    const { propertyType, userId, ...rest } = req.body;
+
+    // Vérifier si le type de propriété est valide
     if (!allowedTypes.includes(propertyType)) {
       return res.status(400).json({ message: "Invalid propertyType" });
     }
 
+    // Vérifier si l'ID de l'utilisateur est présent
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    // Créer la propriété en associant l'ID de l'utilisateur
     const property = await prisma.property.create({
       data: {
         propertyType,
+        user: {
+          connect: { id: userId },
+        },
         ...rest,
       },
     });
+
     res.status(201).json(property);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -133,8 +145,16 @@ app.post("/properties", async (req, res) => {
 
 // Read all properties
 app.get("/properties", async (req, res) => {
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
   try {
-    const properties = await prisma.property.findMany();
+    const properties = await prisma.property.findMany({
+      where: { userId: userId },
+    });
     res.json(properties);
   } catch (err) {
     res.status(500).json({ message: err.message });

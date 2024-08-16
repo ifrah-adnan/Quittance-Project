@@ -15,6 +15,7 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import CardComponent from "../../components/CardComponent";
 import LinkButton from "../../components/LinkButton";
+import { useAuth } from "../../AuthContext";
 
 const PropertyStatusDialog = ({ propertyId, open, onClose }) => {
   const [status, setStatus] = useState(null);
@@ -104,15 +105,21 @@ const Properties = ({ searchQuery }) => {
   const [error, setError] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState(null);
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchProperties();
-  }, []);
+    if (user) {
+      console.log("User connected: ", user);
+      fetchProperties();
+    }
+  }, [user]);
 
   const fetchProperties = () => {
     setLoading(true);
     axios
-      .get("http://localhost:3001/properties")
+      .get("http://localhost:3001/properties", {
+        params: { userId: user.id }, // Inclure user.id dans la requête
+      })
       .then((response) => setProperties(response.data))
       .catch(() => setError("Error fetching properties"))
       .finally(() => setLoading(false));

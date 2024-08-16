@@ -48,6 +48,11 @@ router.post("/signup", async (req, res) => {
 // Route de connexion
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
+  console.log("this is data for login", req.body); // Affiche l'intégralité du corps de la requête
+  if (!email) {
+    console.error("No email provided");
+    return res.status(400).json({ error: "No email provided" });
+  }
 
   try {
     // Vérifie si l'utilisateur existe

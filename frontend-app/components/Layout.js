@@ -57,6 +57,8 @@ const Layout = ({ children, onSearch, exclude }) => {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
+  console.log("this is data for user connected2 ", user);
+
   const [anchorEl, setAnchorEl] = useState(null);
 
   useEffect(() => {

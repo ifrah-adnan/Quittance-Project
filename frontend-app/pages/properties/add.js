@@ -9,11 +9,16 @@ import {
   Grid,
   Typography,
   Autocomplete,
+  Card,
+  CardContent,
 } from "@mui/material";
 import MapPicker from "../../components/MapPicker";
+import { useAuth } from "../../AuthContext";
 
 const AddProperty = () => {
   const router = useRouter();
+  const { user } = useAuth();
+  console.log("this is data for user connected ", user);
 
   const [property, setProperty] = useState({
     propertyNumber: "",
@@ -42,8 +47,13 @@ const AddProperty = () => {
   };
 
   const handleAddProperty = () => {
+    const propertyData = {
+      ...property,
+      userId: user.id,
+    };
+
     axios
-      .post("http://localhost:3001/properties", property)
+      .post("http://localhost:3001/properties", propertyData)
       .then(() => router.push("/properties"))
       .catch(() => setError("Error adding property"));
   };
@@ -57,7 +67,6 @@ const AddProperty = () => {
     router.push("/properties");
   };
 
-  // Fonction appelée lors de la sélection d'un emplacement sur la carte
   const handleLocationSelect = (addressData) => {
     setProperty((prev) => ({
       ...prev,
@@ -124,8 +133,14 @@ const AddProperty = () => {
           />
         </Grid>
         <Grid item xs={12}>
-          {/* Intégrer la carte pour sélectionner l'emplacement */}
-          <MapPicker onSelectLocation={handleLocationSelect} />
+          {/* Intégrer la carte dans un card avec une taille carrée */}
+          <Card>
+            <CardContent>
+              <div style={{ height: 400, width: "100%" }}>
+                <MapPicker onSelectLocation={handleLocationSelect} />
+              </div>
+            </CardContent>
+          </Card>
         </Grid>
         <Grid item xs={12} display="flex" justifyContent="space-between">
           <Button

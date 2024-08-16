@@ -6,27 +6,17 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
-
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  password     String
-  name         String
-  cin          String?   @unique
-  address      String?
-  phoneNumber  String?
-  role         UserRole  @default(USER)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  tenant       Tenant?   @relation(fields: [tenantId], references: [id])
-  tenantId     String?
-  property     Property? @relation(fields: [propertyId], references: [id])
-  propertyId   String?
-}
-
-enum UserRole {
-  ADMIN
-  USER
+  id        String     @id @default(uuid())
+  email     String     @unique
+  password  String
+  name      String
+  role      UserRole   @default(USER)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  properties Property[]
+  tenants    Tenant[]
+  contracts  Contract[]
 }
 
 model Property {
@@ -40,10 +30,10 @@ model Property {
   zipCode        String
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
-  tenants        TenantProperties[]
+  tenantProperties TenantProperties[]
   contracts      Contract[]
-  users          User[]
-
+  userId         String?             // Nouvelle colonne pour lier Property à User
+  user           User?               @relation(fields: [userId], references: [id])
 }
 
 model Tenant {
@@ -53,14 +43,31 @@ model Tenant {
   ice            String
   address        String
   contactName    String
-  email          String?
   contactCin     String
   contactInfo    String
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
-  properties     TenantProperties[]
+  tenantProperties TenantProperties[]
   contracts      Contract[]
-  users          User[]
+  userId         String?              // Nouvelle colonne pour lier Tenant à User
+  user           User?                @relation(fields: [userId], references: [id])
+}
+
+model Contract {
+  id             String          @id @default(uuid())
+  tenantId       String
+  propertyId     String
+  startDate      DateTime
+  endDate        DateTime
+  rentAmount     Float
+  terms          String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  property       Property        @relation(fields: [propertyId], references: [id])
+  rentalPayments RentalPayment[]
+  userId         String?          // Nouvelle colonne pour lier Contract à User
+  user           User?            @relation(fields: [userId], references: [id])
 }
 
 model TenantProperties {
@@ -84,26 +91,16 @@ model RentalPayment {
   contract      Contract      @relation(fields: [contractId], references: [id])
 }
 
+enum UserRole {
+  ADMIN
+  USER
+}
+
 enum PaymentStatus {
   PENDING
   PAID
   PARTIAL
   LATE
-}
-
-model Contract {
-  id             String          @id @default(uuid())
-  tenantId       String
-  propertyId     String
-  startDate      DateTime
-  endDate        DateTime
-  rentAmount     Float
-  terms          String
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  tenant         Tenant          @relation(fields: [tenantId], references: [id])
-  property       Property        @relation(fields: [propertyId], references: [id])
-  rentalPayments RentalPayment[]
 }
 
 enum TenantType {

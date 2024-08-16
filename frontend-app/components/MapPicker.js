@@ -20,7 +20,7 @@ function MapEvents({ onLocationSelect }) {
 }
 
 const MapPicker = ({ onSelectLocation }) => {
-  const [position, setPosition] = useState([48.8566, 2.3522]);
+  const [position, setPosition] = useState([33.5731, -7.5898]);
 
   const handleLocationSelect = async (latlng) => {
     setPosition([latlng.lat, latlng.lng]);
