@@ -29,6 +29,7 @@ import GetAppIcon from "@mui/icons-material/GetApp";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import "jspdf-autotable";
+import { useAuth } from "../../AuthContext";
 const StyledButton = styled(Button)(({ theme }) => ({
   margin: theme.spacing(1),
 }));
@@ -42,6 +43,7 @@ const Contracts = ({ searchQuery }) => {
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [contractToDelete, setContractToDelete] = useState(null);
   const [statusFilter, setStatusFilter] = useState([]);
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchContracts();
@@ -72,10 +74,20 @@ const Contracts = ({ searchQuery }) => {
   };
 
   const fetchProperties = () => {
+    if (!user) {
+      setError("User is not authenticated");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     axios
-      .get("http://localhost:3001/properties")
+      .get("http://localhost:3001/properties", {
+        params: { userId: user.id },
+      })
       .then((response) => setProperties(response.data))
-      .catch(() => setError("Error fetching properties"));
+      .catch(() => setError("Error fetching properties"))
+      .finally(() => setLoading(false));
   };
 
   const handleDeleteContract = (contract) => {

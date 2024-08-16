@@ -14,6 +14,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/router";
 import MuiAlert from "@mui/material/Alert"; // Assurez-vous d'avoir ce package installé
+import { useAuth } from "../../AuthContext";
 
 const Contracts = () => {
   const router = useRouter();
@@ -33,11 +34,18 @@ const Contracts = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      console.log("User connected: ", user);
+      fetchProperties();
+    }
+  }, [user]);
 
   useEffect(() => {
     fetchContracts();
     fetchTenants();
-    fetchProperties();
   }, []);
 
   const fetchContracts = () => {
@@ -57,10 +65,20 @@ const Contracts = () => {
   };
 
   const fetchProperties = () => {
+    if (!user) {
+      setError("User is not authenticated");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     axios
-      .get("http://localhost:3001/properties")
+      .get("http://localhost:3001/properties", {
+        params: { userId: user.id },
+      })
       .then((response) => setProperties(response.data))
-      .catch(() => setError("Error fetching properties"));
+      .catch(() => setError("Error fetching properties"))
+      .finally(() => setLoading(false));
   };
 
   const handleCreateContract = () => {
@@ -70,7 +88,7 @@ const Contracts = () => {
         propertyId: form.property,
         startDate: form.startDate,
         endDate: form.endDate,
-        rentAmount: parseFloat(form.rent), // Assurez-vous que `price` est un nombre
+        rentAmount: parseFloat(form.rent),
         terms: form.conditions,
       })
       .then(() => {

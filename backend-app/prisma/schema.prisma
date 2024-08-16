@@ -42,6 +42,7 @@ model Tenant {
   name           String
   ice            String
   address        String
+  email          String?
   contactName    String
   contactCin     String
   contactInfo    String
