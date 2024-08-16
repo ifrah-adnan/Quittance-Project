@@ -18,6 +18,7 @@ const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
   loading: () => <p>Loading map...</p>,
 });
+
 const EditProperty = () => {
   const router = useRouter();
   const { id } = router.query;
@@ -37,7 +38,7 @@ const EditProperty = () => {
 
   useEffect(() => {
     if (property.address && property.city) {
-      getGeocode();
+      getGeocode(property.address, property.city);
     }
   }, [property.address, property.city]);
 
@@ -45,7 +46,11 @@ const EditProperty = () => {
     setLoading(true);
     axios
       .get(`http://localhost:3001/properties/${id}`)
-      .then((response) => setProperty(response.data))
+      .then((response) => {
+        setProperty(response.data);
+        // Appeler getGeocode ici pour garantir que les coordonnées sont chargées dès que la propriété est récupérée
+        getGeocode(response.data.address, response.data.city);
+      })
       .catch((error) => setError("Error fetching property"))
       .finally(() => setLoading(false));
   };
@@ -59,17 +64,20 @@ const EditProperty = () => {
       .finally(() => setLoading(false));
   };
 
-  const getGeocode = () => {
-    const address = `${property.address}, ${property.city}`;
+  const getGeocode = (address, city) => {
+    const fullAddress = `${address}, ${city}`;
     axios
       .get(
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
-          address
+          fullAddress
         )}`
       )
       .then((response) => {
         if (response.data && response.data.length > 0) {
-          setMapPosition([response.data[0].lat, response.data[0].lon]);
+          setMapPosition([
+            parseFloat(response.data[0].lat),
+            parseFloat(response.data[0].lon),
+          ]);
         }
       })
       .catch((error) => console.error("Error getting geocode", error));
