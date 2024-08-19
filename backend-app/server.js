@@ -234,6 +234,7 @@ app.delete("/properties/:id", async (req, res) => {
 
 // Create a tenant
 const nodemailer = require("nodemailer");
+const { connect } = require("http2");
 
 // Configuration du transporteur d'email
 const transporter = nodemailer.createTransport({
@@ -252,7 +253,7 @@ app.post("/tenants", async (req, res) => {
   try {
     const allowedTypes = Object.keys(TenantType); // ['ENTERPRISE', 'PERSON']
 
-    const { tenantType, email, ...rest } = req.body;
+    const { tenantType, email, userId, ...rest } = req.body;
     if (!allowedTypes.includes(tenantType)) {
       return res.status(400).json({ message: "Invalid tenantType" });
     }
@@ -260,7 +261,10 @@ app.post("/tenants", async (req, res) => {
     const tenant = await prisma.tenant.create({
       data: {
         tenantType,
-        email, // Assuming the tenant has an email field
+        email,
+        user: {
+          connect: { id: userId },
+        },
         ...rest,
       },
     });
@@ -289,8 +293,15 @@ app.post("/tenants", async (req, res) => {
 
 // Read all tenants
 app.get("/tenants", async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
   try {
-    const tenants = await prisma.tenant.findMany();
+    const tenants = await prisma.tenant.findMany({
+      where: { userId: userId },
+    });
     res.json(tenants);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -337,12 +348,19 @@ app.put("/tenants/:id", async (req, res) => {
 // Create a contract
 app.post("/contracts", async (req, res) => {
   try {
-    const { tenantId, propertyId, startDate, endDate, rentAmount, terms } =
-      req.body;
+    const {
+      tenantId,
+      userId,
+      propertyId,
+      startDate,
+      endDate,
+      rentAmount,
+      terms,
+    } = req.body;
 
-    // Vérifier les champs requis
     if (
       !tenantId ||
+      !userId ||
       !propertyId ||
       !startDate ||
       !endDate ||
@@ -359,13 +377,15 @@ app.post("/contracts", async (req, res) => {
         propertyId,
         startDate: new Date(startDate),
         endDate: new Date(endDate),
-        rentAmount: parseFloat(rentAmount), // Assurez-vous que `rentAmount` est un nombre
+        userId, // Utilisez directement userId au lieu de user.connect
+        rentAmount: parseFloat(rentAmount),
         terms,
       },
     });
 
     res.status(201).json(contract);
   } catch (err) {
+    console.error(err); // Log l'erreur complète pour le débogage
     res.status(400).json({ message: err.message });
   }
 });
@@ -446,8 +466,15 @@ app.get("/users", async (req, res) => {
 });
 // Read all contracts
 app.get("/contracts", async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ message: "User ID is required" });
+  }
+
   try {
     const contracts = await prisma.contract.findMany({
+      where: { userId: userId },
+
       include: {
         tenant: true,
         property: true,
@@ -461,13 +488,21 @@ app.get("/contracts", async (req, res) => {
 });
 // Read all rental records
 app.get("/rentalRecords", async (req, res) => {
+  const { userId } = req.query;
+
   try {
     const rentalRecords = await prisma.rentalPayment.findMany({
+      where: {
+        contract: {
+          userId: userId,
+        },
+      },
       include: {
         contract: {
           include: {
             tenant: true,
             property: true,
+            user: true,
           },
         },
       },
@@ -486,9 +521,10 @@ app.post("/rental-payments", async (req, res) => {
     amountPaid,
     paymentStatus,
     paymentDate,
+    userId,
   } = req.body;
 
-  console.log("Données reçues:", req.body); // Pour le débogage
+  console.log("Données reçues:", req.body);
 
   try {
     // Validation et conversion des données
@@ -522,19 +558,38 @@ app.post("/rental-payments", async (req, res) => {
         throw new Error("Invalid paymentDate");
       }
     }
+    const contract = await prisma.contract.findUnique({
+      where: {
+        id: contractId,
+        userId: userId,
+      },
+    });
+
+    if (!contract) {
+      throw new Error(
+        "Contract not found or does not belong to the specified user"
+      );
+    }
 
     const rentalPayment = await prisma.rentalPayment.create({
       data: {
-        contractId,
         dueDate: parsedDueDate,
         amountDue: parsedAmountDue,
         amountPaid: parsedAmountPaid,
         paymentStatus,
         paymentDate: parsedPaymentDate,
+        contract: {
+          connect: {
+            id: contractId,
+          },
+        },
+      },
+      include: {
+        contract: true,
       },
     });
 
-    console.log("RentalPayment créé:", rentalPayment); // Pour le débogage
+    console.log("RentalPayment créé:", rentalPayment);
 
     res.status(201).json(rentalPayment);
   } catch (err) {

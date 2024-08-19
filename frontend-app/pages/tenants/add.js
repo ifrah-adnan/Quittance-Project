@@ -10,6 +10,7 @@ import {
   Typography,
   Autocomplete,
 } from "@mui/material";
+import { useAuth } from "../../AuthContext";
 
 const AddTenant = () => {
   const router = useRouter();
@@ -27,10 +28,14 @@ const AddTenant = () => {
   const [tenantTypes, setTenantTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchTenantTypes();
-  }, []);
+    if (user) {
+      console.log("User connected: ", user);
+      fetchTenantTypes();
+    }
+  }, [user]);
 
   const fetchTenantTypes = () => {
     setLoading(true);
@@ -40,8 +45,13 @@ const AddTenant = () => {
   };
 
   const handleAddTenant = () => {
+    const tenantData = {
+      ...tenant,
+      userId: user.id, // Ajoutez l'ID de l'utilisateur aux données du locataire
+    };
+
     axios
-      .post("http://localhost:3001/tenants", tenant)
+      .post("http://localhost:3001/tenants", tenantData)
       .then(() => {
         console.log("Tenant added successfully");
         router.push("/tenants");
@@ -54,7 +64,6 @@ const AddTenant = () => {
         setError("Error adding tenant");
       });
   };
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setTenant((prev) => ({ ...prev, [name]: value }));

@@ -40,26 +40,34 @@ const Contracts = () => {
     if (user) {
       console.log("User connected: ", user);
       fetchProperties();
+      fetchTenants();
+      fetchContracts();
     }
   }, [user]);
-
-  useEffect(() => {
-    fetchContracts();
-    fetchTenants();
-  }, []);
 
   const fetchContracts = () => {
     setLoading(true);
     axios
-      .get("http://localhost:3001/contracts")
+      .get("http://localhost:3001/contracts", {
+        params: { userId: user.id },
+      })
       .then((response) => setContracts(response.data))
       .catch(() => setError("Error fetching contracts"))
       .finally(() => setLoading(false));
   };
 
   const fetchTenants = () => {
+    if (!user) {
+      setError("User is not authenticated");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+
     axios
-      .get("http://localhost:3001/tenants")
+      .get("http://localhost:3001/tenants", {
+        params: { userId: user.id },
+      })
       .then((response) => setTenants(response.data))
       .catch(() => setError("Error fetching tenants"));
   };
@@ -90,6 +98,7 @@ const Contracts = () => {
         endDate: form.endDate,
         rentAmount: parseFloat(form.rent),
         terms: form.conditions,
+        userId: user.id, // Ajoutez l'ID de l'utilisateur ici
       })
       .then(() => {
         fetchContracts();
@@ -108,7 +117,6 @@ const Contracts = () => {
         setSnackbarOpen(true);
       });
   };
-
   const handleCloseSnackbar = () => {
     setSnackbarOpen(false);
   };

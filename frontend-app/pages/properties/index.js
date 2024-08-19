@@ -118,7 +118,7 @@ const Properties = ({ searchQuery }) => {
     setLoading(true);
     axios
       .get("http://localhost:3001/properties", {
-        params: { userId: user.id }, // Inclure user.id dans la requête
+        params: { userId: user.id },
       })
       .then((response) => setProperties(response.data))
       .catch(() => setError("Error fetching properties"))

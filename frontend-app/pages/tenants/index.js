@@ -12,20 +12,27 @@ import AddIcon from "@mui/icons-material/Add";
 
 import CardComponent from "../../components/CardComponent";
 import TenantCardComponent from "../../components/TenantCardComp";
+import { useAuth } from "../../AuthContext";
 
 const Tenants = ({ searchQuery }) => {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { user } = useAuth();
 
   useEffect(() => {
-    fetchTenants();
-  }, []);
+    if (user) {
+      console.log("User connected: ", user);
+      fetchTenants();
+    }
+  }, [user]);
 
   const fetchTenants = () => {
     setLoading(true);
     axios
-      .get("http://localhost:3001/tenants")
+      .get("http://localhost:3001/tenants", {
+        params: { userId: user.id },
+      })
       .then((response) => setTenants(response.data))
       .catch((error) => setError("Error fetching tenants"))
       .finally(() => setLoading(false));

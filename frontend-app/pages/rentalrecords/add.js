@@ -9,6 +9,7 @@ import {
   Snackbar,
 } from "@mui/material";
 import MuiAlert from "@mui/material/Alert";
+import { useAuth } from "../../AuthContext";
 
 const CreateRentalRecord = () => {
   const [contracts, setContracts] = useState([]);
@@ -21,17 +22,31 @@ const CreateRentalRecord = () => {
   });
   const [error, setError] = useState("");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const { user } = useAuth();
 
   useEffect(() => {
     fetchContracts();
-  }, []);
+  }, [user]);
 
   const fetchContracts = () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
     axios
-      .get("http://localhost:3001/contracts")
-      .then((response) => setContracts(response.data))
+      .get("http://localhost:3001/contracts", {
+        params: { userId: user.id, cacheBuster: new Date().getTime() },
+      })
+      .then((response) => {
+        setContracts(response.data);
+      })
       .catch(() => setError("Error fetching contracts"));
   };
+  console.log("this is contrat", contracts);
 
   useEffect(() => {
     if (form.contractId) {
@@ -65,6 +80,7 @@ const CreateRentalRecord = () => {
         amountDue: formattedForm.amountDue,
         amountPaid: formattedForm.amountPaid,
         paymentStatus: formattedForm.paymentStatus,
+        userId: user.id,
       })
       .then(() => {
         setForm({

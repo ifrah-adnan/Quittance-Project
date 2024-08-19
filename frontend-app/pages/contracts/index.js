@@ -54,7 +54,9 @@ const Contracts = ({ searchQuery }) => {
   const fetchContracts = () => {
     setLoading(true);
     axios
-      .get("http://localhost:3001/contracts")
+      .get("http://localhost:3001/contracts", {
+        params: { userId: user.id },
+      })
       .then((response) => {
         if (Array.isArray(response.data)) {
           setContracts(response.data);
@@ -67,8 +69,17 @@ const Contracts = ({ searchQuery }) => {
   };
 
   const fetchTenants = () => {
+    if (!user) {
+      setError("User is not authenticated");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+
     axios
-      .get("http://localhost:3001/tenants")
+      .get("http://localhost:3001/tenants", {
+        params: { userId: user.id },
+      })
       .then((response) => setTenants(response.data))
       .catch(() => setError("Error fetching tenants"));
   };

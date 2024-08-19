@@ -70,12 +70,17 @@ const RentalRecords = ({ searchQuery }) => {
   const { isAuthenticated, user, logout } = useAuth();
 
   useEffect(() => {
-    fetchRentalRecords();
+    if (user) {
+      console.log("User connected: ", user);
+      fetchRentalRecords();
+    }
   }, []);
 
   const fetchRentalRecords = () => {
     axios
-      .get("http://localhost:3001/rentalrecords")
+      .get("http://localhost:3001/rentalrecords", {
+        params: { userId: user.id },
+      })
       .then((response) => {
         setRentalRecords(response.data);
         setLoading(false);
