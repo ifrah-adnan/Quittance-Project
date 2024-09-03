@@ -446,7 +446,7 @@ app.get("/users", async (req, res) => {
   try {
     const users = await prisma.user.findMany({
       include: {
-        tenant: {
+        tenants: {
           include: {
             contracts: {
               include: {
@@ -455,7 +455,7 @@ app.get("/users", async (req, res) => {
             },
           },
         },
-        property: true,
+        properties: true,
       },
     });
     res.json(users);

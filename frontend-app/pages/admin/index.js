@@ -16,23 +16,23 @@ import {
   Avatar,
   ToggleButtonGroup,
   ToggleButton,
-  useTheme,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Button,
+  CircularProgress,
 } from "@mui/material";
 import { ViewList, ViewModule, Person } from "@mui/icons-material";
 import axios from "axios";
+import { motion } from "framer-motion";
 
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState("list");
+  const [viewMode, setViewMode] = useState("grid");
   const [selectedContract, setSelectedContract] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const theme = useTheme();
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -65,36 +65,58 @@ const AdminUsersPage = () => {
     setSelectedContract(null);
   };
 
-  if (loading) return <Typography>Loading...</Typography>;
+  if (loading)
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        height="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+
+  const gridVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+    },
+  };
 
   return (
-    <Box
-      sx={{
-        p: 3,
-        backgroundColor: theme.palette.background.default,
-        minHeight: "100vh",
-      }}
-    >
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 4,
-        }}
+    <Box p={3} sx={{ backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
+      <Typography
+        variant="h4"
+        gutterBottom
+        sx={{ fontWeight: "bold", color: "#333" }}
       >
-        <Typography
-          variant="h4"
-          sx={{ fontWeight: "bold", color: theme.palette.primary.main }}
-        >
-          Users Management
-        </Typography>
+        User Management
+      </Typography>
+
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+      >
         <ToggleButtonGroup
           value={viewMode}
           exclusive
           onChange={handleViewChange}
           aria-label="view mode"
-          sx={{ backgroundColor: theme.palette.background.paper }}
+          sx={{ backgroundColor: "white", boxShadow: 1 }}
         >
           <ToggleButton value="list" aria-label="list view">
             <ViewList />
@@ -104,192 +126,268 @@ const AdminUsersPage = () => {
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
-      {viewMode === "list" ? (
-        <ListView users={users} onContractClick={handleOpenDialog} />
-      ) : (
-        <GridView users={users} onContractClick={handleOpenDialog} />
-      )}
-      <ContractDialog
+
+      <Box mt={3}>
+        {viewMode === "list" ? (
+          <TableContainer component={Paper} elevation={3}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>User</TableCell>
+                  <TableCell>Role</TableCell>
+                  <TableCell>Properties</TableCell>
+                  <TableCell>Tenants</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {users.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <Box display="flex" alignItems="center">
+                        <Avatar sx={{ mr: 2 }}>{user.name[0]}</Avatar>
+                        <Box>
+                          <Typography variant="subtitle1">
+                            {user.name}
+                          </Typography>
+                          <Typography variant="body2" color="textSecondary">
+                            {user.email}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip
+                        label={user.role}
+                        color={user.role === "USER" ? "primary" : "secondary"}
+                        size="small"
+                      />
+                    </TableCell>
+                    <TableCell>
+                      {user.properties.map((property) => (
+                        <Chip
+                          key={property.id}
+                          label={property.name}
+                          size="small"
+                          sx={{ mr: 0.5, mb: 0.5 }}
+                        />
+                      ))}
+                    </TableCell>
+                    <TableCell>
+                      {user.tenants.map((tenant) => (
+                        <Chip
+                          key={tenant.id}
+                          label={tenant.name}
+                          size="small"
+                          sx={{ mr: 0.5, mb: 0.5 }}
+                        />
+                      ))}
+                    </TableCell>
+                    <TableCell>
+                      {user.tenants
+                        .flatMap((tenant) => tenant.contracts)
+                        .map((contract) => (
+                          <Button
+                            key={contract.id}
+                            onClick={() => handleOpenDialog(contract)}
+                            variant="outlined"
+                            size="small"
+                            sx={{ mr: 0.5, mb: 0.5 }}
+                          >
+                            Contract {contract.id}
+                          </Button>
+                        ))}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <motion.div
+            variants={gridVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <Grid container spacing={3}>
+              {users.map((user) => (
+                <Grid item xs={12} sm={6} md={4} key={user.id}>
+                  <motion.div variants={itemVariants}>
+                    <Card elevation={3}>
+                      <CardContent>
+                        <Box display="flex" alignItems="center" mb={2}>
+                          <Avatar sx={{ width: 56, height: 56, mr: 2 }}>
+                            {user.name[0]}
+                          </Avatar>
+                          <Box>
+                            <Typography variant="h6">{user.name}</Typography>
+                            <Typography variant="body2" color="textSecondary">
+                              {user.email}
+                            </Typography>
+                            <Chip
+                              label={user.role}
+                              color={
+                                user.role === "USER" ? "primary" : "secondary"
+                              }
+                              size="small"
+                              sx={{ mt: 0.5 }}
+                            />
+                          </Box>
+                        </Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Properties:
+                        </Typography>
+                        <Box mb={1}>
+                          {user.properties.map((property) => (
+                            <Chip
+                              key={property.id}
+                              label={property.name}
+                              size="small"
+                              sx={{ mr: 0.5, mb: 0.5 }}
+                            />
+                          ))}
+                        </Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Tenants:
+                        </Typography>
+                        <Box mb={1}>
+                          {user.tenants.map((tenant) => (
+                            <Chip
+                              key={tenant.id}
+                              label={tenant.name}
+                              size="small"
+                              sx={{ mr: 0.5, mb: 0.5 }}
+                            />
+                          ))}
+                        </Box>
+                        <Typography variant="subtitle2" gutterBottom>
+                          Contracts:
+                        </Typography>
+                        <Box>
+                          {user.tenants
+                            .flatMap((tenant) => tenant.contracts)
+                            .map((contract) => (
+                              <Button
+                                key={contract.id}
+                                onClick={() => handleOpenDialog(contract)}
+                                variant="outlined"
+                                size="small"
+                                sx={{ mr: 0.5, mb: 0.5 }}
+                              >
+                                Contract {contract.id}
+                              </Button>
+                            ))}
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                </Grid>
+              ))}
+            </Grid>
+          </motion.div>
+        )}
+      </Box>
+
+      <Dialog
         open={dialogOpen}
         onClose={handleCloseDialog}
-        contract={selectedContract}
-      />
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Contract Details</DialogTitle>
+        <DialogContent dividers>
+          {selectedContract && (
+            <>
+              <Typography variant="h6" gutterBottom>
+                Contract ID: {selectedContract.id}
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6}>
+                  <Typography variant="body1">
+                    Tenant ID: {selectedContract.tenantId}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body1">
+                    Property ID: {selectedContract.propertyId}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body1">
+                    Start Date:{" "}
+                    {new Date(selectedContract.startDate).toLocaleDateString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="body1">
+                    End Date:{" "}
+                    {new Date(selectedContract.endDate).toLocaleDateString()}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body1">
+                    Rent Amount: ${selectedContract.rentAmount}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12}>
+                  <Typography variant="body1">
+                    Terms: {selectedContract.terms}
+                  </Typography>
+                </Grid>
+              </Grid>
+              <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>
+                Payments
+              </Typography>
+              {selectedContract.rentalPayments.map((payment) => (
+                <Paper key={payment.id} elevation={1} sx={{ p: 2, mb: 1 }}>
+                  <Grid container spacing={2} alignItems="center">
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="body2">
+                        Due: {new Date(payment.dueDate).toLocaleDateString()}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Typography variant="body2">
+                        Amount Due: ${payment.amountDue}
+                      </Typography>
+                      <Typography variant="body2">
+                        Amount Paid: ${payment.amountPaid}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Chip
+                        label={payment.paymentStatus}
+                        color={getPaymentStatusColor(payment.paymentStatus)}
+                        size="small"
+                      />
+                    </Grid>
+                  </Grid>
+                </Paper>
+              ))}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
 
-const ListView = ({ users, onContractClick }) => (
-  <TableContainer
-    component={Paper}
-    elevation={3}
-    sx={{ borderRadius: 2, overflow: "hidden" }}
-  >
-    <Table sx={{ minWidth: 650 }}>
-      <TableHead>
-        <TableRow
-          sx={{ backgroundColor: (theme) => theme.palette.primary.main }}
-        >
-          <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-            User
-          </TableCell>
-          <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-            Role
-          </TableCell>
-          <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-            Property
-          </TableCell>
-          <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-            Tenant
-          </TableCell>
-          <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-            Actions
-          </TableCell>
-        </TableRow>
-      </TableHead>
-      <TableBody>
-        {users.map((user) => (
-          <TableRow
-            key={user.id}
-            sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-          >
-            <TableCell>
-              <Box sx={{ display: "flex", alignItems: "center" }}>
-                <Avatar
-                  sx={{
-                    mr: 2,
-                    bgcolor: (theme) => theme.palette.secondary.main,
-                  }}
-                >
-                  <Person />
-                </Avatar>
-                <Box>
-                  <Typography variant="subtitle2">{user.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {user.email}
-                  </Typography>
-                </Box>
-              </Box>
-            </TableCell>
-            <TableCell>
-              <Chip label={user.role} color="primary" size="small" />
-            </TableCell>
-            <TableCell>
-              {user.property ? user.property.name : "No Property"}
-            </TableCell>
-            <TableCell>
-              {user.tenant ? user.tenant.name : "No Tenant"}
-            </TableCell>
-            <TableCell>
-              {user.tenant &&
-                user.tenant.contracts.map((contract) => (
-                  <Button
-                    key={contract.id}
-                    variant="outlined"
-                    onClick={() => onContractClick(contract)}
-                  >
-                    View Details
-                  </Button>
-                ))}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  </TableContainer>
-);
-
-const GridView = ({ users, onContractClick }) => (
-  <Grid container spacing={3}>
-    {users.map((user) => (
-      <Grid item xs={12} sm={6} md={4} key={user.id}>
-        <Card
-          elevation={3}
-          sx={{
-            borderRadius: 2,
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-          }}
-        >
-          <CardContent sx={{ flexGrow: 1 }}>
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <Avatar
-                sx={{ mr: 2, bgcolor: (theme) => theme.palette.secondary.main }}
-              >
-                <Person />
-              </Avatar>
-              <Box>
-                <Typography variant="h6">{user.name}</Typography>
-                <Typography color="text.secondary">{user.email}</Typography>
-              </Box>
-            </Box>
-            <Chip
-              label={user.role}
-              color="primary"
-              size="small"
-              sx={{ mb: 2 }}
-            />
-            <Typography variant="body2" sx={{ mb: 1 }}>
-              <strong>Property:</strong>{" "}
-              {user.property ? user.property.name : "No Property"}
-            </Typography>
-            <Typography variant="body2" sx={{ mb: 2 }}>
-              <strong>Tenant:</strong>{" "}
-              {user.tenant ? user.tenant.name : "No Tenant"}
-            </Typography>
-            {user.tenant && user.tenant.contracts.length > 0 && (
-              <Button
-                variant="outlined"
-                onClick={() => onContractClick(user.tenant.contracts[0])} // Assumes first contract for simplicity
-              >
-                View Details
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      </Grid>
-    ))}
-  </Grid>
-);
-
-const ContractDialog = ({ open, onClose, contract }) => (
-  <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-    <DialogTitle>Contract Details</DialogTitle>
-    <DialogContent>
-      {contract && (
-        <Box>
-          <Typography variant="h6" gutterBottom>
-            {contract.property?.name || "No Property"}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Start Date:</strong>{" "}
-            {new Date(contract.startDate).toLocaleDateString()}
-          </Typography>
-          <Typography variant="body1">
-            <strong>End Date:</strong>{" "}
-            {new Date(contract.endDate).toLocaleDateString()}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Rent Amount:</strong> ${contract.rentAmount}
-          </Typography>
-          <Typography variant="body1">
-            <strong>Status:</strong>{" "}
-            <Chip
-              label={
-                contract.rentalPayments.length > 0
-                  ? "Has Payments"
-                  : "No Payments"
-              }
-              color={contract.rentalPayments.length > 0 ? "success" : "warning"}
-            />
-          </Typography>
-        </Box>
-      )}
-    </DialogContent>
-    <DialogActions>
-      <Button onClick={onClose}>Close</Button>
-    </DialogActions>
-  </Dialog>
-);
+const getPaymentStatusColor = (status) => {
+  switch (status) {
+    case "PAID":
+      return "success";
+    case "PARTIAL":
+      return "warning";
+    case "PENDING":
+      return "error";
+    default:
+      return "default";
+  }
+};
 
 export default AdminUsersPage;
