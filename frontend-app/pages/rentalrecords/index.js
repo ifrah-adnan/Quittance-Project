@@ -169,7 +169,7 @@ const RentalRecords = ({ searchQuery }) => {
     if (record.contract.tenant.tenantType === "PERSON") {
       tenantText = `${record.contract.tenant.name}, CNIE ${record.contract.tenant.contactCin} , Adress ${record.contract.tenant.address}, représentée par son gérant M/me ${record.contract.tenant.contactName}, titulaire de la CIN N° ${record.contract.tenant.contactCin}, Demeurant à ${record.contract.tenant.address},`;
     } else {
-      tenantText = `${record.contract.tenant.companyName}, immatriculée au registre de commerce sous le numéro xxx, représentée par son gérant ${record.contract.tenant.contactName}, Demeurant à ${record.contract.tenant.address},`;
+      tenantText = `${record.contract.tenant.companyName}, immatriculée au registre de commerce sous le numéro ${record.contract.tenant.ice}, représentée par son gérant ${record.contract.tenant.contactName}, Demeurant à ${record.contract.tenant.address},`;
     }
     doc.text(tenantText, 15, 85, { maxWidth: 180 });
 
