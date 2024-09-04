@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,13 +8,41 @@ import {
   Grid,
   Box,
   Divider,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from "@mui/material";
 import Link from "next/link";
 import HomeIcon from "@mui/icons-material/Home";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import HouseIcon from "@mui/icons-material/House";
+import CloseIcon from "@mui/icons-material/Close";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 const CardComponent = ({ item, onDelete, onEdit, fields, editLink }) => {
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const handleViewImages = () => {
+    setCurrentImageIndex(0);
+    setImageDialogOpen(true);
+  };
+
+  const handleNextImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex < item.images.length - 1 ? prevIndex + 1 : prevIndex
+    );
+  };
+
+  const handlePrevImage = () => {
+    setCurrentImageIndex((prevIndex) =>
+      prevIndex > 0 ? prevIndex - 1 : prevIndex
+    );
+  };
+
   return (
     <Card
       elevation={3}
@@ -25,6 +53,17 @@ const CardComponent = ({ item, onDelete, onEdit, fields, editLink }) => {
           <Typography variant="h4" component="div" color="primary.main">
             Property #{item.propertyNumber}
           </Typography>
+          {item.images.length > 0 && (
+            <Button
+              size="small"
+              color="primary"
+              onClick={handleViewImages}
+              variant="outlined"
+              sx={{ ml: 2 }}
+            >
+              View Images
+            </Button>
+          )}
         </Box>
         <Divider sx={{ my: 1 }} />
         <Grid container spacing={1}>
@@ -79,6 +118,55 @@ const CardComponent = ({ item, onDelete, onEdit, fields, editLink }) => {
           Delete
         </Button>
       </CardActions>
+
+      {/* Dialogue d'affichage d'images */}
+      <Dialog
+        open={imageDialogOpen}
+        onClose={() => setImageDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+            Images for Property #{item.propertyNumber}
+            <IconButton onClick={() => setImageDialogOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              my: 2,
+            }}
+          >
+            {currentImageIndex > 0 && (
+              <IconButton onClick={handlePrevImage}>
+                <ArrowBackIcon />
+              </IconButton>
+            )}
+            {item.images && item.images.length > 0 && (
+              <img
+                src={`http://localhost:3001/${item.images[currentImageIndex]?.url}`}
+                alt={`Property Image ${currentImageIndex + 1}`}
+                style={{ maxWidth: "100%", height: "auto" }}
+              />
+            )}
+            {currentImageIndex < item.images.length - 1 && (
+              <IconButton onClick={handleNextImage}>
+                <ArrowForwardIcon />
+              </IconButton>
+            )}
+          </Box>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setImageDialogOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 };

@@ -13,7 +13,7 @@ import {
   CardActions,
 } from "@mui/material";
 import { useRouter } from "next/router";
-import MuiAlert from "@mui/material/Alert"; // Assurez-vous d'avoir ce package installé
+import MuiAlert from "@mui/material/Alert";
 import { useAuth } from "../../AuthContext";
 
 const Contracts = () => {
@@ -98,7 +98,7 @@ const Contracts = () => {
         endDate: form.endDate,
         rentAmount: parseFloat(form.rent),
         terms: form.conditions,
-        userId: user.id, // Ajoutez l'ID de l'utilisateur ici
+        userId: user.id,
       })
       .then(() => {
         fetchContracts();
@@ -123,7 +123,6 @@ const Contracts = () => {
 
   const handleSelectContract = (contract) => {
     setSelectedContract(contract);
-    // Optionally fetch detailed information or populate form for editing
   };
 
   return (
@@ -190,12 +189,10 @@ const Contracts = () => {
           <TextField
             fullWidth
             label="Rent"
-            type="text" // Changer le type à 'text'
+            type="text"
             value={form.rent}
             onChange={(e) => {
-              // Optionnel: ajouter une validation pour le format de prix
               const value = e.target.value;
-              // Vous pouvez ajouter une validation plus complexe ici si nécessaire
               if (/^\d*\.?\d*$/.test(value)) {
                 setForm((prev) => ({ ...prev, rent: value }));
               }

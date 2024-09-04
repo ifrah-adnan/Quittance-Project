@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useFormik } from "formik";
-import * as Yup from "yup";
 import {
   TextField,
   Button,
@@ -13,9 +12,15 @@ import {
   CssBaseline,
   Divider,
   Avatar,
+  ToggleButtonGroup,
+  ToggleButton,
+  IconButton,
 } from "@mui/material";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
-import { Person as PersonIcon } from "@mui/icons-material";
+import {
+  Person as PersonIcon,
+  CloudUpload as CloudUploadIcon,
+} from "@mui/icons-material";
 import { useAuth } from "../../AuthContext";
 import axios from "axios";
 
@@ -32,11 +37,22 @@ const theme = createTheme({
 
 const CompleteProfile = () => {
   const { user } = useAuth();
+  const [userType, setUserType] = useState("PERSON");
   const [initialValues, setInitialValues] = useState({
     cin: "",
     address: "",
     phoneNumber: "",
+    ice: "",
+    companyName: "",
+    contactName: "",
+    signature: null,
+    logo: null,
+    userType: "PERSON",
   });
+  const [signatureImage, setSignatureImage] = useState(null);
+  const [logoImage, setLogoImage] = useState(null);
+  const [signaturePreview, setSignaturePreview] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -45,35 +61,84 @@ const CompleteProfile = () => {
         cin: user.cin || "",
         address: user.address || "",
         phoneNumber: user.phoneNumber || "",
+        ice: user.ice || "",
+        companyName: user.companyName || "",
+        contactName: user.contactName || "",
+        signature: user.signature || null,
+        logo: user.logo || null,
+        userType: user.userType || "PERSON",
       });
+      setSignaturePreview(
+        user.signature ? `http://localhost:3001/${user.signature}` : null
+      );
+      setLogoPreview(user.logo ? `http://localhost:3001/${user.logo}` : null);
     }
   }, [user]);
 
-  const validationSchema = Yup.object({
-    cin: Yup.string().required("CIN is required"),
-    address: Yup.string().required("Address is required"),
-    phoneNumber: Yup.string().required("Phone number is required"),
-  });
-
   const formik = useFormik({
     initialValues,
-    validationSchema,
     enableReinitialize: true,
     onSubmit: async (values) => {
+      const formData = new FormData();
+      for (const key in values) {
+        if (values[key]) {
+          formData.append(key, values[key]);
+        }
+      }
+      if (signatureImage) {
+        formData.append("signature", signatureImage);
+      } else if (!formik.values.signature) {
+        formData.append("signature", formik.values.signature);
+      }
+      if (logoImage) {
+        formData.append("logo", logoImage);
+      } else if (!formik.values.logo) {
+        formData.append("logo", formik.values.logo);
+      }
+
       try {
-        await axios.put("http://localhost:3001/complete-profile", values, {
+        await axios.put("http://localhost:3001/complete-profile", formData, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("authToken")}`,
-            "Content-Type": "application/json",
+            "Content-Type": "multipart/form-data",
           },
         });
         alert("Profile updated successfully");
       } catch (error) {
         console.error("Error updating profile:", error);
-        alert("Error updating profile");
+        let errorMessage = "An unexpected error occurred";
+        if (error.response) {
+          errorMessage = `Error ${error.response.status}: ${
+            error.response.data.error || error.response.statusText
+          }`;
+        } else if (error.request) {
+          errorMessage = "No response received from the server";
+        } else {
+          errorMessage = error.message;
+        }
+        alert(`Error updating profile: ${errorMessage}`);
       }
     },
   });
+
+  const handleUserTypeChange = (event, newUserType) => {
+    if (newUserType !== null) {
+      formik.setFieldValue("userType", newUserType.toUpperCase());
+      setUserType(newUserType.toUpperCase());
+    }
+  };
+
+  const handleSignatureChange = (event) => {
+    const file = event.target.files[0];
+    setSignatureImage(file);
+    setSignaturePreview(URL.createObjectURL(file));
+  };
+
+  const handleLogoChange = (event) => {
+    const file = event.target.files[0];
+    setLogoImage(file);
+    setLogoPreview(URL.createObjectURL(file));
+  };
 
   return (
     <ThemeProvider theme={theme}>
@@ -101,6 +166,22 @@ const CompleteProfile = () => {
               Complete Your Profile
             </Typography>
             <Divider sx={{ width: "100%", mb: 3 }} />
+
+            <ToggleButtonGroup
+              value={formik.values.userType}
+              exclusive
+              onChange={handleUserTypeChange}
+              aria-label="user type"
+              sx={{ mb: 4 }}
+            >
+              <ToggleButton value="PERSON" aria-label="person">
+                Person
+              </ToggleButton>
+              <ToggleButton value="ENTERPRISE" aria-label="enterprise">
+                Enterprise
+              </ToggleButton>
+            </ToggleButtonGroup>
+
             <Grid container spacing={4}>
               <Grid item xs={12} md={4}>
                 <Typography
@@ -110,82 +191,141 @@ const CompleteProfile = () => {
                 >
                   User Information
                 </Typography>
-                <Typography
-                  variant="body1"
-                  paragraph
-                  sx={{ fontSize: "1.125rem" }}
-                >
-                  Name: {user?.name}
-                </Typography>
-                <Typography
-                  variant="body1"
-                  paragraph
-                  sx={{ fontSize: "1.125rem" }}
-                >
-                  Email: {user?.email}
+                <Typography variant="subtitle1" color="textSecondary">
+                  Fill in the details below to complete your profile.
                 </Typography>
               </Grid>
               <Grid item xs={12} md={8}>
-                <Box component="form" onSubmit={formik.handleSubmit}>
+                <form onSubmit={formik.handleSubmit}>
                   <TextField
-                    fullWidth
-                    id="cin"
-                    name="cin"
                     label="CIN"
+                    name="cin"
                     value={formik.values.cin}
                     onChange={formik.handleChange}
-                    error={formik.touched.cin && Boolean(formik.errors.cin)}
-                    helperText={formik.touched.cin && formik.errors.cin}
+                    fullWidth
                     margin="normal"
-                    variant="outlined"
-                    sx={{ fontSize: "1.125rem" }}
                   />
                   <TextField
-                    fullWidth
-                    id="address"
-                    name="address"
                     label="Address"
+                    name="address"
                     value={formik.values.address}
                     onChange={formik.handleChange}
-                    error={
-                      formik.touched.address && Boolean(formik.errors.address)
-                    }
-                    helperText={formik.touched.address && formik.errors.address}
+                    fullWidth
                     margin="normal"
-                    variant="outlined"
-                    multiline
-                    rows={3}
-                    sx={{ fontSize: "1.125rem" }}
                   />
                   <TextField
-                    fullWidth
-                    id="phoneNumber"
-                    name="phoneNumber"
                     label="Phone Number"
+                    name="phoneNumber"
                     value={formik.values.phoneNumber}
                     onChange={formik.handleChange}
-                    error={
-                      formik.touched.phoneNumber &&
-                      Boolean(formik.errors.phoneNumber)
-                    }
-                    helperText={
-                      formik.touched.phoneNumber && formik.errors.phoneNumber
-                    }
+                    fullWidth
                     margin="normal"
-                    variant="outlined"
-                    sx={{ fontSize: "1.125rem" }}
                   />
+                  {formik.values.userType === "ENTERPRISE" && (
+                    <>
+                      <TextField
+                        label="ICE"
+                        name="ice"
+                        value={formik.values.ice}
+                        onChange={formik.handleChange}
+                        fullWidth
+                        margin="normal"
+                      />
+                      <TextField
+                        label="Company Name"
+                        name="companyName"
+                        value={formik.values.companyName}
+                        onChange={formik.handleChange}
+                        fullWidth
+                        margin="normal"
+                      />
+                      <TextField
+                        label="Contact Name"
+                        name="contactName"
+                        value={formik.values.contactName}
+                        onChange={formik.handleChange}
+                        fullWidth
+                        margin="normal"
+                      />
+                      <Box sx={{ mt: 2 }}>
+                        <input
+                          accept="image/*"
+                          id="logo-file"
+                          type="file"
+                          style={{ display: "none" }}
+                          onChange={handleLogoChange}
+                        />
+                        <label htmlFor="logo-file">
+                          <Button
+                            variant="contained"
+                            component="span"
+                            startIcon={<CloudUploadIcon />}
+                          >
+                            Upload Logo
+                          </Button>
+                        </label>
+                        {logoPreview && (
+                          <Box sx={{ mt: 2 }}>
+                            <Typography variant="subtitle1">
+                              Logo Preview:
+                            </Typography>
+                            <img
+                              src={logoPreview}
+                              alt="Logo Preview"
+                              style={{
+                                width: "100px",
+                                height: "auto",
+                                marginTop: "10px",
+                              }}
+                            />
+                          </Box>
+                        )}
+                      </Box>
+                    </>
+                  )}
+                  <Box sx={{ mt: 2 }}>
+                    <input
+                      accept="image/*"
+                      id="signature-file"
+                      type="file"
+                      style={{ display: "none" }}
+                      onChange={handleSignatureChange}
+                    />
+                    <label htmlFor="signature-file">
+                      <Button
+                        variant="contained"
+                        component="span"
+                        startIcon={<CloudUploadIcon />}
+                      >
+                        Upload Signature
+                      </Button>
+                    </label>
+                    {signaturePreview && (
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle1">
+                          Signature Preview:
+                        </Typography>
+                        <img
+                          src={signaturePreview}
+                          alt="Signature Preview"
+                          style={{
+                            width: "100px",
+                            height: "auto",
+                            marginTop: "10px",
+                          }}
+                        />
+                      </Box>
+                    )}
+                  </Box>
                   <Button
                     type="submit"
-                    fullWidth
                     variant="contained"
                     color="primary"
-                    size="large"
-                    sx={{ mt: 4, mb: 2, py: 1.5, fontSize: "1.125rem" }}
+                    sx={{ mt: 3 }}
                   >
-                    Save Profile
+                    Submit
                   </Button>
-                </Box>
+                </form>
               </Grid>
             </Grid>
           </Box>

@@ -14,6 +14,7 @@ import { useAuth } from "../../AuthContext";
 
 const AddTenant = () => {
   const router = useRouter();
+  const { user } = useAuth();
 
   const [tenant, setTenant] = useState({
     tenantType: "",
@@ -23,12 +24,11 @@ const AddTenant = () => {
     contactName: "",
     contactCin: "",
     contactInfo: "",
-    email: "", // Ajout du champ email
+    email: "",
   });
   const [tenantTypes, setTenantTypes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
@@ -39,7 +39,7 @@ const AddTenant = () => {
 
   const fetchTenantTypes = () => {
     setLoading(true);
-    // Définir les types de tenant directement dans le frontend
+
     setTenantTypes(["ENTERPRISE", "PERSON"]);
     setLoading(false);
   };
@@ -47,7 +47,7 @@ const AddTenant = () => {
   const handleAddTenant = () => {
     const tenantData = {
       ...tenant,
-      userId: user.id, // Ajoutez l'ID de l'utilisateur aux données du locataire
+      userId: user.id,
     };
 
     axios
@@ -64,9 +64,18 @@ const AddTenant = () => {
         setError("Error adding tenant");
       });
   };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setTenant((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleTenantTypeChange = (event, newValue) => {
+    setTenant((prev) => ({
+      ...prev,
+      tenantType: newValue,
+      ice: newValue === "PERSON" ? "" : prev.ice,
+    }));
   };
 
   const handleCancel = () => {
@@ -89,9 +98,7 @@ const AddTenant = () => {
               <TextField {...params} label="Tenant Type" fullWidth />
             )}
             value={tenant.tenantType}
-            onChange={(event, newValue) => {
-              setTenant((prev) => ({ ...prev, tenantType: newValue }));
-            }}
+            onChange={handleTenantTypeChange}
           />
         </Grid>
         <Grid item xs={12} md={6}>
@@ -103,15 +110,17 @@ const AddTenant = () => {
             onChange={handleChange}
           />
         </Grid>
-        <Grid item xs={12} md={6}>
-          <TextField
-            fullWidth
-            label="ICE"
-            name="ice"
-            value={tenant.ice}
-            onChange={handleChange}
-          />
-        </Grid>
+        {tenant.tenantType === "ENTERPRISE" && (
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="ICE"
+              name="ice"
+              value={tenant.ice}
+              onChange={handleChange}
+            />
+          </Grid>
+        )}
         <Grid item xs={12} md={6}>
           <TextField
             fullWidth
@@ -153,7 +162,7 @@ const AddTenant = () => {
             fullWidth
             label="Email"
             name="email"
-            type="email" // Ajout du champ email
+            type="email"
             value={tenant.email}
             onChange={handleChange}
           />

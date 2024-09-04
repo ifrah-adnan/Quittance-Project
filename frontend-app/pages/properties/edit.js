@@ -12,7 +12,9 @@ import {
   Grid,
   Typography,
   Box,
+  IconButton,
 } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const MapComponent = dynamic(() => import("./MapComponent"), {
   ssr: false,
@@ -28,6 +30,7 @@ const EditProperty = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [mapPosition, setMapPosition] = useState([0, 0]);
+  const [images, setImages] = useState([]);
 
   useEffect(() => {
     if (id) {
@@ -48,19 +51,20 @@ const EditProperty = () => {
       .get(`http://localhost:3001/properties/${id}`)
       .then((response) => {
         setProperty(response.data);
-        // Appeler getGeocode ici pour garantir que les coordonnées sont chargées dès que la propriété est récupérée
+        setImages(response.data.images || []); // Suppose que les images sont incluses dans la réponse
         getGeocode(response.data.address, response.data.city);
       })
-      .catch((error) => setError("Error fetching property"))
+      .catch(() => setError("Error fetching property"))
       .finally(() => setLoading(false));
   };
 
+  console.log("this is properties", property);
   const fetchPropertyTypes = () => {
     setLoading(true);
     axios
       .get("http://localhost:3001/property-types")
       .then((response) => setPropertyTypes(response.data))
-      .catch((error) => setError("Error fetching property types"))
+      .catch(() => setError("Error fetching property types"))
       .finally(() => setLoading(false));
   };
 
@@ -87,12 +91,23 @@ const EditProperty = () => {
     axios
       .put(`http://localhost:3001/properties/${id}`, property)
       .then(() => router.push("/properties"))
-      .catch((error) => setError("Error updating property"));
+      .catch(() => setError("Error updating property"));
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setProperty((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDeleteImage = (imageId) => {
+    axios
+      .delete(`http://localhost:3001/properties/${id}/images/${imageId}`)
+      .then(() => {
+        setImages((prevImages) =>
+          prevImages.filter((img) => img.id !== imageId)
+        );
+      })
+      .catch(() => setError("Error deleting image"));
   };
 
   return (
@@ -181,6 +196,30 @@ const EditProperty = () => {
               city={property.city}
             />
           </Box>
+        </Grid>
+        <Grid item xs={12}>
+          <Typography variant="h6" component="h3">
+            Property Images
+          </Typography>
+          <Grid container spacing={2}>
+            {images.map((image) => (
+              <Grid item xs={6} md={4} key={image.id}>
+                <Box sx={{ position: "relative" }}>
+                  <img
+                    src={`http://localhost:3001/${image.url}`}
+                    alt={`Property Image ${image.id}`}
+                    style={{ width: "100%", height: "auto" }}
+                  />
+                  <IconButton
+                    sx={{ position: "absolute", top: 0, right: 0 }}
+                    onClick={() => handleDeleteImage(image.id)}
+                  >
+                    <DeleteIcon />
+                  </IconButton>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
         </Grid>
         <Grid item xs={12}>
           <Button

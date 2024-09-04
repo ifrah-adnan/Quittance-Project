@@ -30,6 +30,8 @@ const AddProperty = () => {
     zipCode: "",
   });
   const [propertyTypes, setPropertyTypes] = useState([]);
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -47,15 +49,29 @@ const AddProperty = () => {
   };
 
   const handleAddProperty = () => {
-    const propertyData = {
-      ...property,
-      userId: user.id,
-    };
+    const propertyData = new FormData();
+
+    Object.keys(property).forEach((key) => {
+      propertyData.append(key, property[key]);
+    });
+
+    propertyData.append("userId", user.id);
+
+    images.forEach((image) => {
+      propertyData.append("images", image);
+    });
 
     axios
-      .post("http://localhost:3001/properties", propertyData)
+      .post("http://localhost:3001/properties", propertyData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
       .then(() => router.push("/properties"))
-      .catch(() => setError("Error adding property"));
+      .catch((err) => {
+        console.error("Error adding property:", err);
+        setError("Error adding property");
+      });
   };
 
   const handleChange = (e) => {
@@ -73,6 +89,14 @@ const AddProperty = () => {
       address: addressData.road || "",
       city: addressData.city || addressData.town || addressData.village || "",
     }));
+  };
+
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    setImages(files);
+
+    const previews = files.map((file) => URL.createObjectURL(file));
+    setImagePreviews(previews);
   };
 
   return (
@@ -133,7 +157,34 @@ const AddProperty = () => {
           />
         </Grid>
         <Grid item xs={12}>
-          {/* Intégrer la carte dans un card avec une taille carrée */}
+          {/* Champ d'upload pour les images */}
+          <input
+            type="file"
+            multiple
+            onChange={handleImageChange}
+            accept="image/*"
+          />
+        </Grid>
+        <Grid item xs={12}>
+          {/* Prévisualisation des images */}
+          {imagePreviews.length > 0 && (
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              {imagePreviews.map((preview, index) => (
+                <img
+                  key={index}
+                  src={preview}
+                  alt={`Preview ${index}`}
+                  style={{
+                    width: "100px",
+                    height: "100px",
+                    objectFit: "cover",
+                  }}
+                />
+              ))}
+            </div>
+          )}
+        </Grid>
+        <Grid item xs={12}>
           <Card>
             <CardContent>
               <div style={{ height: 400, width: "100%" }}>

@@ -1,6 +1,8 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
 const cors = require("cors");
+const upload = require("./multerConfig");
+
 require("dotenv").config();
 
 const app = express();
@@ -61,26 +63,70 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
-app.put("/complete-profile", authenticateToken, async (req, res) => {
-  const { cin, address, phoneNumber } = req.body;
-  const userId = req.user.id; // Assurez-vous que l'identifiant de l'utilisateur est stocké dans req.user après l'authentification
+app.put(
+  "/complete-profile",
+  authenticateToken,
+  upload.fields([
+    { name: "signature", maxCount: 1 },
+    { name: "logo", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    const {
+      cin,
+      address,
+      phoneNumber,
+      ice,
+      companyName,
+      contactName,
+      userType,
+    } = req.body;
 
-  try {
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        cin,
-        address,
-        phoneNumber,
-      },
-    });
+    const userId = req.user.id;
+    const signature = req.files["signature"]
+      ? req.files["signature"][0].path
+      : null;
+    const logo = req.files["logo"] ? req.files["logo"][0].path : null;
 
-    res.status(200).json(updatedUser);
-  } catch (error) {
-    console.error("Error updating profile:", error);
-    res.status(500).json({ error: "Error updating profile" });
+    try {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!currentUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      const updateData = {
+        cin: cin || currentUser.cin,
+        address: address || currentUser.address,
+        phoneNumber: phoneNumber || currentUser.phoneNumber,
+        ice: userType === "ENTERPRISE" ? ice || currentUser.ice : null,
+        companyName:
+          userType === "ENTERPRISE"
+            ? companyName || currentUser.companyName
+            : null,
+        contactName:
+          userType === "ENTERPRISE"
+            ? contactName || currentUser.contactName
+            : null,
+        signature: signature || currentUser.signature,
+        logo: logo || currentUser.logo,
+        userType: userType || currentUser.userType,
+      };
+
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+      });
+
+      res.status(200).json(updatedUser);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ error: "Error updating profile" });
+    }
   }
-});
+);
+
 // Route pour récupérer les informations utilisateur
 app.get("/user", authenticateToken, async (req, res) => {
   try {
@@ -110,35 +156,44 @@ app.get("/tenant-types", (req, res) => {
 // CRUD operations for Property model
 
 // Create a property
-app.post("/properties", async (req, res) => {
+app.post("/properties", upload.array("images", 10), async (req, res) => {
   try {
-    const allowedTypes = Object.keys(PropertyType); // ['VILLA', 'APARTMENT', ...]
+    const allowedTypes = Object.keys(PropertyType);
 
     const { propertyType, userId, ...rest } = req.body;
 
-    // Vérifier si le type de propriété est valide
+    console.log("Received body:", req.body);
+    console.log("Received files:", req.files);
+
     if (!allowedTypes.includes(propertyType)) {
       return res.status(400).json({ message: "Invalid propertyType" });
     }
 
-    // Vérifier si l'ID de l'utilisateur est présent
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
     }
 
-    // Créer la propriété en associant l'ID de l'utilisateur
+    const imagePaths = req.files.map((file) => file.path);
+
     const property = await prisma.property.create({
       data: {
         propertyType,
         user: {
           connect: { id: userId },
         },
+        images: {
+          create: imagePaths.map((url) => ({ url })),
+        },
         ...rest,
+      },
+      include: {
+        images: true,
       },
     });
 
     res.status(201).json(property);
   } catch (err) {
+    console.error("Error:", err);
     res.status(400).json({ message: err.message });
   }
 });
@@ -154,6 +209,9 @@ app.get("/properties", async (req, res) => {
   try {
     const properties = await prisma.property.findMany({
       where: { userId: userId },
+      include: {
+        images: true,
+      },
     });
     res.json(properties);
   } catch (err) {
@@ -166,6 +224,9 @@ app.get("/properties/:id", async (req, res) => {
   try {
     const property = await prisma.property.findUnique({
       where: { id: req.params.id },
+      include: {
+        images: true,
+      },
     });
     if (!property) {
       return res.status(404).json({ message: "Property not found" });
@@ -175,24 +236,94 @@ app.get("/properties/:id", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+app.delete("/properties/:id/images/:imageId", async (req, res) => {
+  const { id, imageId } = req.params;
+
+  try {
+    // Vérifiez si l'image existe
+    const image = await prisma.propertyImage.findUnique({
+      where: { id: imageId },
+    });
+
+    if (!image) {
+      return res.status(404).json({ error: "Image not found" });
+    }
+
+    // Supprimez l'image
+    await prisma.propertyImage.delete({
+      where: { id: imageId },
+    });
+
+    res.status(200).json({ message: "Image deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Error deleting image" });
+  }
+});
 
 // Update a property
 app.put("/properties/:id", async (req, res) => {
   try {
-    const allowedTypes = Object.keys(PropertyType); // ['VILLA', 'APARTMENT', ...]
+    const allowedTypes = Object.keys(PropertyType);
 
-    const { propertyType, ...rest } = req.body;
+    const {
+      propertyType,
+      propertyNumber,
+      name,
+      address,
+      city,
+      state,
+      zipCode,
+      userId,
+      images,
+    } = req.body;
+
+    // Validation du type de propriété
     if (propertyType && !allowedTypes.includes(propertyType)) {
       return res.status(400).json({ message: "Invalid propertyType" });
     }
 
+    // Mise à jour de la propriété
     const property = await prisma.property.update({
       where: { id: req.params.id },
       data: {
         propertyType,
-        ...rest,
+        propertyNumber,
+        name,
+        address,
+        city,
+        state,
+        zipCode,
+        userId,
+        images: {
+          // Mise à jour des images existantes
+          update:
+            images
+              ?.filter((image) => image.id)
+              .map((image) => ({
+                where: { id: image.id },
+                data: {
+                  url: image.url,
+                  description: image.description,
+                  updatedAt: new Date(),
+                },
+              })) || [],
+          create:
+            images
+              ?.filter((image) => !image.id)
+              .map((image) => ({
+                url: image.url,
+                description: image.description,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+              })) || [],
+          deleteMany: {
+            id: { notIn: images?.map((image) => image.id) || [] },
+          },
+        },
       },
     });
+
     res.json(property);
   } catch (err) {
     res.status(400).json({ message: err.message });
@@ -204,22 +335,18 @@ app.delete("/properties/:id", async (req, res) => {
   const propertyId = req.params.id;
 
   try {
-    // Supprimer les contrats associés à la propriété
     await prisma.contract.deleteMany({
       where: { propertyId: propertyId },
     });
 
-    // Supprimer les paiements de location associés à la propriété
     await prisma.rentalPayment.deleteMany({
       where: { contract: { propertyId: propertyId } },
     });
 
-    // Supprimer les associations entre les locataires et la propriété
     await prisma.tenantProperties.deleteMany({
       where: { propertyId: propertyId },
     });
 
-    // Maintenant supprimer la propriété elle-même
     await prisma.property.delete({
       where: { id: propertyId },
     });
@@ -235,13 +362,14 @@ app.delete("/properties/:id", async (req, res) => {
 // Create a tenant
 const nodemailer = require("nodemailer");
 const { connect } = require("http2");
+const path = require("path");
 
 // Configuration du transporteur d'email
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
     user: "ifrahadnan61@gmail.com",
-    pass: "xout wivk byca sdrb", // Remplacez cela par un mot de passe d'application généré par Google
+    pass: "xout wivk byca sdrb",
   },
   tls: {
     rejectUnauthorized: false,
@@ -251,7 +379,7 @@ const transporter = nodemailer.createTransport({
 // Route pour créer un tenant
 app.post("/tenants", async (req, res) => {
   try {
-    const allowedTypes = Object.keys(TenantType); // ['ENTERPRISE', 'PERSON']
+    const allowedTypes = Object.keys(TenantType);
 
     const { tenantType, email, userId, ...rest } = req.body;
     if (!allowedTypes.includes(tenantType)) {
@@ -271,8 +399,8 @@ app.post("/tenants", async (req, res) => {
 
     // Envoi de l'email
     const mailOptions = {
-      from: "ifrahadnan61@gmail.com", // L'adresse email de l'expéditeur
-      to: email, // L'adresse email du destinataire (le nouveau tenant)
+      from: "ifrahadnan61@gmail.com",
+      to: email,
       subject: "Bienvenue chez notre service",
       text: `Bonjour ${tenant.name},\n\nMerci d'avoir rejoint notre service en tant que ${tenantType}.\n\nCordialement,\nL'équipe`,
     };
@@ -323,10 +451,9 @@ app.get("/tenants/:id", async (req, res) => {
   }
 });
 
-// Update a tenant
 app.put("/tenants/:id", async (req, res) => {
   try {
-    const allowedTypes = Object.keys(TenantType); // ['ENTERPRISE', 'PERSON']
+    const allowedTypes = Object.keys(TenantType);
 
     const { tenantType, ...rest } = req.body;
     if (tenantType && !allowedTypes.includes(tenantType)) {
@@ -851,6 +978,7 @@ app.delete("/tenants/:id", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);

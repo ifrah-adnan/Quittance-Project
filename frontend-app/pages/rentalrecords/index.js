@@ -95,154 +95,164 @@ const RentalRecords = ({ searchQuery }) => {
   const generateRentReceipt = (record) => {
     const doc = new jsPDF();
 
-    // Ajouter un fond légèrement gris pour simuler une photocopie
-    doc.setFillColor(250, 250, 250);
-    doc.rect(0, 0, 210, 297, "F");
-
-    // Configuration de la police
+    // Configuration de base
     doc.setFont("helvetica");
     doc.setFontSize(10);
 
-    // Titre principal
+    // Fond de page
+    doc.setFillColor(250, 250, 250);
+    doc.rect(0, 0, 210, 297, "F");
+
+    // Ajouter le logo en haut à gauche
+    const logoUrl = record.contract.user.logo;
+    if (logoUrl) {
+      doc.addImage(`http://localhost:3001/${logoUrl}`, "JPEG", 10, 10, 30, 15);
+    }
+
+    // Titre du document
     doc.setFontSize(16);
-    doc.setTextColor(0, 102, 204); // Bleu
-    doc.text("QUITTANCE DE LOYER", 105, 20, null, null, "center");
+    doc.setTextColor(0, 102, 204);
+    const titleText =
+      record.contract.tenant.tenantType === "ENTERPRISE"
+        ? "QUITTANCE DE LOYER ENTREPRISE"
+        : "QUITTANCE DE LOYER PERSONNE";
+    doc.text(titleText, 110, 20, null, null, "center");
 
-    // Détails de la quittance
-    doc.setFontSize(12);
-    doc.setTextColor(0, 0, 0); // Noir
+    // Référence
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`REF : QL ${record.id.slice(0, 8)}`, 180, 10);
 
-    // Référence de la quittance
-    doc.text(`REF : QL ${record.id.slice(0, 8)}`, 20, 30);
-
-    // Mois de la quittance
+    // Date de la quittance
     const formattedDate = new Date(record.dueDate).toLocaleDateString("fr-FR", {
       month: "long",
       year: "numeric",
     });
-    doc.setTextColor(0, 102, 204); // Bleu pour le titre
-    doc.text(`Quittance de loyer du mois de ${formattedDate}`, 20, 40);
+    doc.setFontSize(11);
+    doc.setTextColor(0, 102, 204);
+    doc.text(`Quittance de loyer du mois de ${formattedDate}`, 10, 30);
 
-    // Adresse du bien
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0); // Noir
-    doc.text(`Adresse du bien : ${record.contract.property.city}`, 20, 50);
-    doc.text(`Code postal : ${record.contract.property.zipCode}`, 20, 55);
-    doc.text(`Ville : ${record.contract.property.city}`, 20, 60);
-    doc.text("Titre foncier : N°T-45/89862", 20, 65);
-
-    // Informations du déclarant
-    doc.setFontSize(12);
-    doc.setTextColor(0, 102, 204); // Bleu pour le titre
-    doc.text("Déclarant :", 20, 75);
-
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0); // Noir
+    // Informations sur le bien
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Adresse du bien :", 10, 40);
+    doc.text(record.contract.property.address, 15, 45);
     doc.text(
-      "Je soussigné(e), [NOM DE LA SOCIÉTÉ] Unique, immatriculée au registre de commerce de",
-      20,
-      80
-    );
-    doc.text(
-      `Casablanca sous le numéro 541253, représentée par son gérant unique ${user.name},`,
-      20,
-      85
-    );
-    doc.text(
-      "titulaire de la [carte nation], propriétaire du logement désigné ci-dessus,",
-      20,
-      90
+      `${record.contract.property.zipCode} ${record.contract.property.city}`,
+      15,
+      50
     );
 
-    // Informations sur le locataire
-    doc.setFontSize(12);
-    doc.setTextColor(0, 102, 204); // Bleu pour le titre
-    doc.text("Déclare avoir reçu de :", 20, 100);
+    // Déclarant
+    doc.setFontSize(11);
+    doc.setTextColor(0, 102, 204);
+    doc.text("Déclarant :", 10, 60);
 
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0); // Noir
-    doc.text(
-      `La société ${record.contract.tenant.name}, ICE xx, siège social ${record.contract.tenant.address},`,
-      20,
-      105
-    );
-    doc.text(
-      `représentée par son gérant M/me ${record.contract.tenant.contactName}, titulaire de la CIN N° ${record.contract.tenant.contactCin},`,
-      20,
-      110
-    );
-    doc.text(`Demeurant à ${record.contract.tenant.address},`, 20, 115);
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    let declarantText = "";
+    if (record.contract.user.userType === "PERSON") {
+      declarantText = `Je soussigné(e), ${record.contract.user.firstName} ${record.contract.user.lastName}, titulaire de l'ICE ${record.contract.tenant.ice}, propriétaire du logement désigné ci-dessus,`;
+    } else {
+      declarantText = `Je soussigné(e), ${record.contract.user.companyName}, immatriculée au registre de commerce de ${record.contract.user.ice} à ${record.contract.user.address}, représentée par son gérant unique ${record.contract.user.contactName}, titulaire de la carte d'identité nationale N° xxx, propriétaire du logement désigné ci-dessus,`;
+    }
+    doc.text(declarantText, 15, 65, { maxWidth: 180 });
 
-    // Somme reçue
-    doc.setFontSize(12);
-    doc.setTextColor(0, 102, 204); // Bleu pour le titre
-    doc.text("La somme de :", 20, 125);
+    // Locataire
+    doc.setFontSize(11);
+    doc.setTextColor(0, 102, 204);
+    doc.text("Déclare avoir reçu de :", 10, 80);
 
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0); // Noir
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    let tenantText = "";
+    if (record.contract.tenant.tenantType === "PERSON") {
+      tenantText = `${record.contract.tenant.name}, ICE ${record.contract.tenant.ice}, siège social ${record.contract.tenant.address}, représentée par son gérant M/me ${record.contract.tenant.contactName}, titulaire de la CIN N° ${record.contract.tenant.contactCin}, Demeurant à ${record.contract.tenant.address},`;
+    } else {
+      tenantText = `${record.contract.tenant.companyName}, immatriculée au registre de commerce sous le numéro xxx, représentée par son gérant ${record.contract.tenant.contactName}, Demeurant à ${record.contract.tenant.address},`;
+    }
+    doc.text(tenantText, 15, 85, { maxWidth: 180 });
+
+    // Montant
+    doc.setFontSize(11);
+    doc.setTextColor(0, 102, 204);
+    doc.text("La somme de :", 10, 100);
+
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
     doc.text(
       `${record.amountPaid.toFixed(2)} dirhams ( ${numberToWords(
         record.amountPaid
       )} dirhams ),`,
-      20,
-      130
+      15,
+      105
     );
 
-    // Détails de la période de location
+    // Période de location
     const startDate = new Date(record.dueDate).toLocaleDateString("fr-FR");
     const endDate = new Date(record.dueDate).toLocaleDateString("fr-FR");
 
-    doc.setFontSize(12);
-    doc.setTextColor(0, 102, 204); // Bleu pour le titre
-    doc.text("Au titre de :", 20, 140);
+    doc.setFontSize(11);
+    doc.setTextColor(0, 102, 204);
+    doc.text("Au titre de :", 10, 115);
 
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0); // Noir
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
     doc.text(
       `Paiement du loyer pour la période de location du ${startDate} au ${endDate} : ${record.amountDue.toFixed(
         2
       )} DHS`,
-      20,
-      145
+      15,
+      120
     );
 
     // Clause de quittance
-    doc.setTextColor(0, 0, 0); // Noir
     doc.text(
       "Et lui en donne quittance, sous réserve de tous mes droits.",
-      20,
-      155
+      10,
+      130
     );
 
     // Détails du règlement
-    doc.setFontSize(12);
-    doc.setTextColor(0, 102, 204); // Bleu pour le titre
-    doc.text("DÉTAIL DU RÈGLEMENT :", 20, 165);
+    doc.setFontSize(11);
+    doc.setTextColor(0, 102, 204);
+    doc.text("DÉTAIL DU RÈGLEMENT :", 10, 140);
 
-    doc.setFontSize(10);
-    doc.setTextColor(0, 0, 0); // Noir
-    doc.text(`Loyer : ${record.amountDue.toFixed(2)} Dirhams`, 30, 170);
-    doc.text("Provision pour charges : 0,00 Dirhams", 30, 175);
-    doc.text(`Total : ${record.amountDue.toFixed(2)} Dirhams`, 30, 180);
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Loyer : ${record.amountDue.toFixed(2)} Dirhams`, 15, 145);
+    doc.text("Provision pour charges : 0,00 Dirhams", 15, 150);
+    doc.text(`Total : ${record.amountDue.toFixed(2)} Dirhams`, 15, 155);
     doc.text(
       `Date du paiement : ${
         record.paymentDate
           ? new Date(record.paymentDate).toLocaleDateString("fr-FR")
           : "Non payé"
       }`,
-      30,
-      185
+      15,
+      160
     );
 
     // Lieu et date
     const today = new Date().toLocaleDateString("fr-FR");
-
-    doc.setTextColor(0, 0, 0); // Noir
-    doc.text(`Fait à ${record.contract.property.city} le ${today}`, 20, 200);
+    doc.text(`Fait à ${record.contract.property.city} le ${today}`, 10, 175);
 
     // Signature
-    doc.setFontSize(12);
-    doc.text("Signature du bailleur", 20, 220);
+    doc.setFontSize(11);
+    doc.text("Signature du bailleur", 10, 185);
+
+    // Ajouter la signature
+    const signatureUrl = record.contract.user.signature;
+    if (signatureUrl) {
+      doc.addImage(
+        `http://localhost:3001/${signatureUrl}`,
+        "JPEG",
+        10,
+        190,
+        40,
+        20
+      );
+    }
 
     // Sauvegarder le PDF
     doc.save(`quittance_${record.id}.pdf`);

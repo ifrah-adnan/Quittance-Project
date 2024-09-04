@@ -1,5 +1,3 @@
-// pages/contracts/edit.js
-
 import { useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -17,7 +15,7 @@ import { useAuth } from "../../AuthContext";
 
 const EditContract = () => {
   const router = useRouter();
-  const { id } = router.query; // L'ID du contrat à éditer
+  const { id } = router.query;
   const { user } = useAuth();
 
   const [contract, setContract] = useState(null);

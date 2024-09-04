@@ -6,72 +6,99 @@ datasource db {
 generator client {
   provider = "prisma-client-js"
 }
+
 model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  password  String
-  name      String
-  cin       String?
-  address   String?
-  phoneNumber String?
-  role      UserRole   @default(USER)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  properties Property[]
-  tenants    Tenant[]
-  contracts  Contract[]
+  id                   String     @id @default(uuid())
+  email                String     @unique
+  password             String
+  name                 String
+  userType             UserType   @default(PERSON)
+  firstName            String? 
+  lastName             String? 
+  cin                  String? 
+  dateOfBirth          DateTime?
+  gender               Gender? 
+  companyName          String? 
+  ice                  String? 
+  logo                 String? 
+  registrationNumber  String? 
+  taxId                String?
+  tradeRegister       String? 
+  contactName          String? 
+  contactPhoneNumber   String? 
+  contactEmail         String? 
+  address              String?
+  phoneNumber          String?
+  role                 UserRole   @default(USER)
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+  properties           Property[]
+  tenants              Tenant[]
+  contracts            Contract[]
+  signature            String?   
+}
+model Property {
+  id                   String             @id @default(uuid())
+  propertyNumber       String             @unique
+  propertyType         PropertyType
+  name                 String
+  address              String
+  city                 String
+  state                String
+  zipCode              String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  tenantProperties     TenantProperties[]
+  contracts            Contract[]
+  userId               String?            
+  user                 User?              @relation(fields: [userId], references: [id])
+  images               PropertyImage[]    
 }
 
-model Property {
-  id             String             @id @default(uuid())
-  propertyNumber String             @unique
-  propertyType   PropertyType
-  name           String
-  address        String
-  city           String
-  state          String
-  zipCode        String
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-  tenantProperties TenantProperties[]
-  contracts      Contract[]
-  userId         String?             // Nouvelle colonne pour lier Property à User
-  user           User?               @relation(fields: [userId], references: [id])
+model PropertyImage {
+  id          String   @id @default(uuid())
+  url         String   
+  description String?  
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
+
 
 model Tenant {
-  id             String              @id @default(uuid())
-  tenantType     TenantType
-  name           String
-  ice            String
-  address        String
-  email          String?
-  contactName    String
-  contactCin     String
-  contactInfo    String
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  tenantProperties TenantProperties[]
-  contracts      Contract[]
-  userId         String?              // Nouvelle colonne pour lier Tenant à User
-  user           User?                @relation(fields: [userId], references: [id])
+  id                   String              @id @default(uuid())
+  tenantType           TenantType
+  name                 String
+  ice                  String             
+  address              String
+  email                String?
+  contactName          String
+  contactCin           String
+  contactInfo          String
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  tenantProperties     TenantProperties[]
+  contracts            Contract[]
+  userId               String?
+  user                 User?                @relation(fields: [userId], references: [id])
 }
 
 model Contract {
-  id             String          @id @default(uuid())
-  tenantId       String
-  propertyId     String
-  startDate      DateTime
-  endDate        DateTime
-  rentAmount     Float
-  terms          String
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  tenant         Tenant          @relation(fields: [tenantId], references: [id])
-  property       Property        @relation(fields: [propertyId], references: [id])
-  rentalPayments RentalPayment[]
-  userId         String?          // Nouvelle colonne pour lier Contract à User
-  user           User?            @relation(fields: [userId], references: [id])
+  id                   String          @id @default(uuid())
+  tenantId             String
+  propertyId           String
+  startDate            DateTime
+  endDate              DateTime
+  rentAmount           Float
+  terms                String
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  tenant               Tenant          @relation(fields: [tenantId], references: [id])
+  property             Property        @relation(fields: [propertyId], references: [id])
+  rentalPayments       RentalPayment[]
+  userId               String?          
+  user                 User?            @relation(fields: [userId], references: [id])
 }
 
 model TenantProperties {
@@ -119,5 +146,16 @@ enum PropertyType {
   STUDIO
   OFFICE
   GARAGE
+  AUTRE
+}
+
+enum UserType {
+  PERSON
+  ENTERPRISE
+}
+
+enum Gender {
+  HOMME
+  FEMME
   AUTRE
 }
