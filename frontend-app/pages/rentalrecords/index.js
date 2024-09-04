@@ -152,7 +152,7 @@ const RentalRecords = ({ searchQuery }) => {
     doc.setTextColor(0, 0, 0);
     let declarantText = "";
     if (record.contract.user.userType === "PERSON") {
-      declarantText = `Je soussigné(e), ${record.contract.user.firstName} ${record.contract.user.lastName}, titulaire de l'ICE ${record.contract.tenant.ice}, propriétaire du logement désigné ci-dessus,`;
+      declarantText = `Je soussigné(e), ${record.contract.user.name} , titulaire de CNIE ${record.contract.user.cin}, propriétaire du logement désigné ci-dessus,`;
     } else {
       declarantText = `Je soussigné(e), ${record.contract.user.companyName}, immatriculée au registre de commerce de ${record.contract.user.ice} à ${record.contract.user.address}, représentée par son gérant unique ${record.contract.user.contactName}, titulaire de la carte d'identité nationale N° xxx, propriétaire du logement désigné ci-dessus,`;
     }
@@ -167,7 +167,7 @@ const RentalRecords = ({ searchQuery }) => {
     doc.setTextColor(0, 0, 0);
     let tenantText = "";
     if (record.contract.tenant.tenantType === "PERSON") {
-      tenantText = `${record.contract.tenant.name}, ICE ${record.contract.tenant.ice}, siège social ${record.contract.tenant.address}, représentée par son gérant M/me ${record.contract.tenant.contactName}, titulaire de la CIN N° ${record.contract.tenant.contactCin}, Demeurant à ${record.contract.tenant.address},`;
+      tenantText = `${record.contract.tenant.name}, CNIE ${record.contract.tenant.contactCin} , Adress ${record.contract.tenant.address}, représentée par son gérant M/me ${record.contract.tenant.contactName}, titulaire de la CIN N° ${record.contract.tenant.contactCin}, Demeurant à ${record.contract.tenant.address},`;
     } else {
       tenantText = `${record.contract.tenant.companyName}, immatriculée au registre de commerce sous le numéro xxx, représentée par son gérant ${record.contract.tenant.contactName}, Demeurant à ${record.contract.tenant.address},`;
     }
@@ -225,8 +225,8 @@ const RentalRecords = ({ searchQuery }) => {
     doc.text(`Total : ${record.amountDue.toFixed(2)} Dirhams`, 15, 155);
     doc.text(
       `Date du paiement : ${
-        record.paymentDate
-          ? new Date(record.paymentDate).toLocaleDateString("fr-FR")
+        record.dueDate
+          ? new Date(record.dueDate).toLocaleDateString("fr-FR")
           : "Non payé"
       }`,
       15,
