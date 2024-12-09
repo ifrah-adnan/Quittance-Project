@@ -12,8 +12,13 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import MapPicker from "../../components/MapPicker";
+import dynamic from "next/dynamic";
 import { useAuth } from "../../AuthContext";
+
+const MapPicker = dynamic(() => import("../../components/MapPicker"), {
+  ssr: false,
+  loading: () => <p>Loading map...</p>,
+});
 
 const AddProperty = () => {
   const router = useRouter();
@@ -157,7 +162,6 @@ const AddProperty = () => {
           />
         </Grid>
         <Grid item xs={12}>
-          {/* Champ d'upload pour les images */}
           <input
             type="file"
             multiple
@@ -166,7 +170,6 @@ const AddProperty = () => {
           />
         </Grid>
         <Grid item xs={12}>
-          {/* Prévisualisation des images */}
           {imagePreviews.length > 0 && (
             <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
               {imagePreviews.map((preview, index) => (
